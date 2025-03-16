@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { 
   ArrowLeft, Calendar, Clock, Share2, Bookmark, 
-  Heart, MessageSquare, Send, ThumbsUp 
+  Heart, MessageSquare, Send, ThumbsUp, User 
 } from 'lucide-react';
 import { getBlogById, getBlogs } from '@/data/mockBlogs';
 import { toast } from 'sonner';
