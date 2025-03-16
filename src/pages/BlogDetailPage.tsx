@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
@@ -40,13 +39,11 @@ const BlogDetailPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   useEffect(() => {
-    // Check if user is logged in
     const user = localStorage.getItem('currentUser');
     if (user) {
       setCurrentUser(JSON.parse(user));
     }
     
-    // Generate some random comments
     const randomComments: Comment[] = [
       {
         id: 'comment-1',
@@ -68,7 +65,6 @@ const BlogDetailPage = () => {
     
     setComments(randomComments);
     
-    // Check if the blog is already liked in localStorage
     if (currentUser) {
       const likedBlogs = JSON.parse(localStorage.getItem('likedBlogs') || '[]');
       if (likedBlogs.includes(id)) {
@@ -104,13 +100,11 @@ const BlogDetailPage = () => {
     
     if (isLiked) {
       setLikeCount(prev => prev - 1);
-      // Remove from localStorage
       const likedBlogs = JSON.parse(localStorage.getItem('likedBlogs') || '[]');
       const updatedLikedBlogs = likedBlogs.filter((blogId: string) => blogId !== id);
       localStorage.setItem('likedBlogs', JSON.stringify(updatedLikedBlogs));
     } else {
       setLikeCount(prev => prev + 1);
-      // Add to localStorage
       const likedBlogs = JSON.parse(localStorage.getItem('likedBlogs') || '[]');
       likedBlogs.push(id);
       localStorage.setItem('likedBlogs', JSON.stringify(likedBlogs));
@@ -130,7 +124,6 @@ const BlogDetailPage = () => {
     
     setIsLoading(true);
     
-    // Simulate API call
     setTimeout(() => {
       const newCommentObj: Comment = {
         id: `comment-${Date.now()}`,
@@ -168,7 +161,6 @@ const BlogDetailPage = () => {
       <Navbar />
       
       <main className="flex-grow">
-        {/* Hero Section */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-black/20 z-10" />
           <img 
@@ -202,11 +194,9 @@ const BlogDetailPage = () => {
           </div>
         </div>
         
-        {/* Content Section */}
         <div className="container py-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-8">
-              {/* Navigation */}
               <div className="mb-6">
                 <Button 
                   variant="outline" 
@@ -218,12 +208,10 @@ const BlogDetailPage = () => {
                 </Button>
               </div>
               
-              {/* Article content */}
               <div className="prose prose-lg max-w-none">
                 <div dangerouslySetInnerHTML={{ __html: blog.content }} />
               </div>
               
-              {/* Tags */}
               <div className="mt-8 pt-8 border-t">
                 <h3 className="font-medium mb-4">Tags</h3>
                 <div className="flex flex-wrap gap-2">
@@ -235,7 +223,6 @@ const BlogDetailPage = () => {
                 </div>
               </div>
               
-              {/* Like and Share */}
               <div className="mt-8 flex gap-4">
                 <Button 
                   variant={isLiked ? "default" : "outline"} 
@@ -256,13 +243,11 @@ const BlogDetailPage = () => {
                 </Button>
               </div>
               
-              {/* Comments Section */}
               <div className="mt-12">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="heading-3">Comments ({comments.length})</h3>
                 </div>
                 
-                {/* Comment Form */}
                 <Card className="mb-8">
                   <CardContent className="p-4">
                     <div className="flex gap-4">
@@ -303,7 +288,6 @@ const BlogDetailPage = () => {
                   </CardContent>
                 </Card>
                 
-                {/* Comments List */}
                 {comments.length > 0 ? (
                   <div className="space-y-6">
                     {comments.map((comment) => (
@@ -349,7 +333,6 @@ const BlogDetailPage = () => {
             </div>
             
             <div className="lg:col-span-4">
-              {/* Author card */}
               <Card className="mb-8">
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
@@ -370,7 +353,6 @@ const BlogDetailPage = () => {
                 </CardContent>
               </Card>
               
-              {/* Related articles */}
               <div>
                 <h3 className="font-display text-xl font-semibold mb-4">Related Articles</h3>
                 <div className="space-y-6">
