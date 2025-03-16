@@ -5,6 +5,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import ServicesPage from "./pages/ServicesPage";
+import ServiceDetailPage from "./pages/ServiceDetailPage";
+import AboutPage from "./pages/AboutPage";
+import BlogPage from "./pages/BlogPage";
+import BlogDetailPage from "./pages/BlogDetailPage";
+import JobsPage from "./pages/JobsPage";
+import JobDetailPage from "./pages/JobDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -17,17 +24,14 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/services" element={<NotFound />} />
-          <Route path="/services/:type" element={<NotFound />} />
-          <Route path="/services/:type/:id" element={<NotFound />} />
-          <Route path="/about" element={<NotFound />} />
-          <Route path="/blog" element={<NotFound />} />
-          <Route path="/blog/:id" element={<NotFound />} />
-          <Route path="/jobs" element={<NotFound />} />
-          <Route path="/jobs/:id" element={<NotFound />} />
-          <Route path="/login" element={<NotFound />} />
-          <Route path="/register" element={<NotFound />} />
-          <Route path="/post-job" element={<NotFound />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/services/:type" element={<ServicesPage />} />
+          <Route path="/services/:type/:id" element={<ServiceDetailPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:id" element={<BlogDetailPage />} />
+          <Route path="/jobs" element={<JobsPage />} />
+          <Route path="/jobs/:id" element={<JobDetailPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
