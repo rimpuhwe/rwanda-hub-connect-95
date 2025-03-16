@@ -163,7 +163,12 @@ const JobDetailPage = () => {
                       <p className="text-gray-700">{job.deadline} ({calculateDaysLeft()} days left)</p>
                     </div>
                     
-                    <Button className="w-full mb-3">Apply Now</Button>
+                    <Button 
+                      className="w-full mb-3"
+                      onClick={() => navigate(`/jobs/${id}/apply`)}
+                    >
+                      Apply Now
+                    </Button>
                     <div className="flex gap-2">
                       <Button variant="outline" className="flex-1">
                         <Share2 className="h-4 w-4 mr-2" />
