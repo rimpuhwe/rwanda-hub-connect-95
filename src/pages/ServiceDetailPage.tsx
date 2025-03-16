@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -8,9 +7,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { ArrowLeft, MapPin, Star, Wifi, Check, X, UtilityPole, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, MapPin, Wifi, Check, X, UtilityPole, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getServiceById } from '@/data/mockServices';
 import { format } from 'date-fns';
+import { Rating } from '@/components/ui/Rating';
+import { toast } from 'sonner';
 
 const ServiceDetailPage = () => {
   const { id } = useParams();
@@ -18,6 +19,8 @@ const ServiceDetailPage = () => {
   const service = getServiceById(id || '');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
+  const [userRating, setUserRating] = useState<number>(0);
+  const [showRatingSuccess, setShowRatingSuccess] = useState(false);
   const [dateRange, setDateRange] = useState<{
     from: Date;
     to?: Date;
@@ -64,8 +67,23 @@ const ServiceDetailPage = () => {
   };
 
   const handleBooking = () => {
-    alert('Booking successful! In a real app, this would connect to a payment gateway.');
+    toast.success('Booking successful! In a real app, this would connect to a payment gateway.');
     setBookingDialogOpen(false);
+  };
+
+  const handleRateService = (rating: number) => {
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) {
+      toast.error('Please log in to rate this service');
+      return;
+    }
+    
+    setUserRating(rating);
+    toast.success(`Thank you for rating this ${service.type} ${rating} stars!`);
+    setShowRatingSuccess(true);
+    
+    // In a real app, this would send the rating to a backend
+    setTimeout(() => setShowRatingSuccess(false), 3000);
   };
 
   return (
@@ -93,9 +111,8 @@ const ServiceDetailPage = () => {
                 <span>{service.location}</span>
               </div>
               
-              <div className="flex items-center text-yellow-500">
-                <Star className="h-4 w-4 fill-current" />
-                <span className="ml-1 font-medium">{service.rating}</span>
+              <div className="flex items-center">
+                <Rating value={service.rating} readOnly />
                 <span className="ml-1 text-gray-500">({service.reviewCount} reviews)</span>
               </div>
               
@@ -145,6 +162,7 @@ const ServiceDetailPage = () => {
                 <TabsTrigger value="details">Details</TabsTrigger>
                 <TabsTrigger value="amenities">Amenities</TabsTrigger>
                 <TabsTrigger value="location">Location</TabsTrigger>
+                <TabsTrigger value="reviews">Reviews</TabsTrigger>
               </TabsList>
               
               <TabsContent value="details" className="text-gray-700">
@@ -183,6 +201,81 @@ const ServiceDetailPage = () => {
                 <p className="mb-4">Located in {service.location}, Rwanda.</p>
                 <div className="bg-gray-200 rounded-lg h-[300px] flex items-center justify-center">
                   <p className="text-gray-500">Map will be displayed here (Google Maps integration)</p>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="reviews">
+                <div className="space-y-6">
+                  <div className="bg-gray-50 p-6 rounded-lg">
+                    <h3 className="font-semibold text-lg mb-4">Rate Your Experience</h3>
+                    <div className="flex items-center gap-4">
+                      <Rating 
+                        value={userRating} 
+                        size="lg" 
+                        onChange={handleRateService} 
+                      />
+                      <span className="text-sm text-gray-500">
+                        {userRating > 0 ? 'Thanks for your rating!' : 'Click to rate'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <h3 className="font-semibold text-lg mt-6">Guest Reviews</h3>
+                  <div className="space-y-4">
+                    <div className="border-b pb-4">
+                      <div className="flex justify-between mb-2">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                            <span className="font-medium">J</span>
+                          </div>
+                          <div>
+                            <h4 className="font-medium">John D.</h4>
+                            <span className="text-xs text-gray-500">May 2023</span>
+                          </div>
+                        </div>
+                        <Rating value={4.5} readOnly size="sm" />
+                      </div>
+                      <p className="text-gray-700">Exceptional location and service. The staff was very attentive and the amenities exceeded our expectations. Will definitely return!</p>
+                    </div>
+                    
+                    <div className="border-b pb-4">
+                      <div className="flex justify-between mb-2">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                            <span className="font-medium">S</span>
+                          </div>
+                          <div>
+                            <h4 className="font-medium">Sarah M.</h4>
+                            <span className="text-xs text-gray-500">April 2023</span>
+                          </div>
+                        </div>
+                        <Rating value={5} readOnly size="sm" />
+                      </div>
+                      <p className="text-gray-700">Perfect stay for our honeymoon! The views were breathtaking and the room was absolutely spotless. Highly recommend for special occasions.</p>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                            <span className="font-medium">R</span>
+                          </div>
+                          <div>
+                            <h4 className="font-medium">Robert T.</h4>
+                            <span className="text-xs text-gray-500">March 2023</span>
+                          </div>
+                        </div>
+                        <Rating value={4} readOnly size="sm" />
+                      </div>
+                      <p className="text-gray-700">Great value for the price. The location was convenient and we enjoyed the breakfast options. Would stay here again on our next visit to Rwanda.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 text-center">
+                    <Button variant="outline" size="sm">
+                      View All 24 Reviews
+                    </Button>
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>

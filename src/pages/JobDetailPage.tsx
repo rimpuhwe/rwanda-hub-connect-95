@@ -1,17 +1,33 @@
-
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { getJobById } from '@/data/mockJobs';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { getJobById } from '@/data/mockJobs';
-import { ArrowLeft, MapPin, Calendar, Briefcase, DollarSign, Share2, Bookmark, Mail, Phone, Clock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  ArrowLeft, MapPin, Briefcase, Clock, Calendar, 
+  Banknote, GraduationCap, CheckCircle, Users, Building
+} from 'lucide-react';
+import { CompanyProfile } from '@/components/jobs/CompanyProfile';
 
 const JobDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const job = getJobById(id || '');
+  
+  // Example company data (in a real app, this would come from an API)
+  const companyData = {
+    name: job?.company || 'Company Name',
+    logo: job?.logo || '',
+    location: job?.location || 'Rwanda',
+    website: 'www.company-website.com',
+    founded: '2010',
+    size: '51-200 employees',
+    industry: 'Hospitality & Tourism',
+    description: 'This company is a leading provider of hospitality services in Rwanda, committed to delivering exceptional experiences for both travelers and employees. With a focus on sustainability and community development, they aim to showcase the best of Rwandan hospitality.'
+  };
 
   if (!job) {
     return (
@@ -19,7 +35,7 @@ const JobDetailPage = () => {
         <Navbar />
         <div className="container flex-grow flex flex-col items-center justify-center py-12">
           <h1 className="heading-2 mb-4">Job Not Found</h1>
-          <p className="text-gray-600 mb-6">The job listing you're looking for doesn't exist or has been removed.</p>
+          <p className="text-gray-600 mb-6">The job you're looking for doesn't exist or has been removed.</p>
           <Button onClick={() => navigate('/jobs')} variant="outline">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Jobs
@@ -30,205 +46,181 @@ const JobDetailPage = () => {
     );
   }
 
-  const formatSalary = () => {
-    const { min, max, currency, period } = job.salary;
-    let periodText = '';
-    
-    switch (period) {
-      case 'hour':
-        periodText = '/hr';
-        break;
-      case 'month':
-        periodText = '/month';
-        break;
-      case 'year':
-        periodText = '/year';
-        break;
-    }
-    
-    return `${currency} ${min.toLocaleString()} - ${max.toLocaleString()}${periodText}`;
-  };
-
-  const calculateDaysLeft = () => {
-    const deadline = new Date(job.deadline);
-    const today = new Date();
-    const diffTime = Math.abs(deadline.getTime() - today.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays;
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      <main className="flex-grow">
-        <div className="container py-12">
+      <div className="container py-12">
+        <div className="mb-8">
           <Button 
-            variant="outline" 
-            size="sm" 
-            className="mb-6"
+            variant="outline"
+            size="sm"
             onClick={() => navigate('/jobs')}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Jobs
           </Button>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4 mb-6">
-                    <img 
-                      src={job.logo} 
-                      alt={job.company}
-                      className="w-16 h-16 object-cover rounded"
-                    />
-                    <div>
-                      <h1 className="heading-2 mb-1">{job.title}</h1>
-                      <p className="text-gray-700 text-lg">{job.company}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div className="flex items-center text-gray-700">
-                      <MapPin className="h-5 w-5 mr-2 text-gray-500" />
-                      <span>{job.location}</span>
-                    </div>
-                    
-                    <div className="flex items-center text-gray-700">
-                      <Briefcase className="h-5 w-5 mr-2 text-gray-500" />
-                      <span className="capitalize">{job.type}</span>
-                    </div>
-                    
-                    <div className="flex items-center text-gray-700">
-                      <DollarSign className="h-5 w-5 mr-2 text-gray-500" />
-                      <span>{formatSalary()}</span>
-                    </div>
-                    
-                    <div className="flex items-center text-gray-700">
-                      <Calendar className="h-5 w-5 mr-2 text-gray-500" />
-                      <span>Posted on {job.postedDate}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-3 mb-8">
-                    <Badge>{job.category}</Badge>
-                    <Badge variant="outline" className="capitalize">{job.type}</Badge>
-                  </div>
-                  
-                  <div className="space-y-6">
-                    <div>
-                      <h2 className="font-display text-xl font-semibold mb-3">Job Description</h2>
-                      <p className="text-gray-700 whitespace-pre-line">
-                        {job.description}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <h2 className="font-display text-xl font-semibold mb-3">Requirements</h2>
-                      <ul className="list-disc pl-5 space-y-2 text-gray-700">
-                        {job.requirements.map((requirement, index) => (
-                          <li key={index}>{requirement}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    
-                    <div>
-                      <h2 className="font-display text-xl font-semibold mb-3">Responsibilities</h2>
-                      <ul className="list-disc pl-5 space-y-2 text-gray-700">
-                        {job.responsibilities.map((responsibility, index) => (
-                          <li key={index}>{responsibility}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* Sidebar */}
+        </div>
+        
+        <div className="bg-white rounded-xl shadow-md p-8 mb-8">
+          <div className="flex items-start justify-between mb-6">
             <div>
-              <div className="space-y-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="font-display text-lg font-semibold mb-4">Apply for this job</h3>
-                    
-                    <div className="mb-6">
-                      <div className="flex items-center text-amber-600 mb-2">
-                        <Clock className="h-5 w-5 mr-2" />
-                        <span className="font-medium">Application Deadline</span>
-                      </div>
-                      <p className="text-gray-700">{job.deadline} ({calculateDaysLeft()} days left)</p>
-                    </div>
-                    
-                    <Button 
-                      className="w-full mb-3"
-                      onClick={() => navigate(`/jobs/${id}/apply`)}
-                    >
-                      Apply Now
-                    </Button>
-                    <div className="flex gap-2">
-                      <Button variant="outline" className="flex-1">
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Share
-                      </Button>
-                      <Button variant="outline" className="flex-1">
-                        <Bookmark className="h-4 w-4 mr-2" />
-                        Save
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="font-display text-lg font-semibold mb-4">Contact Information</h3>
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-start">
-                        <Mail className="h-5 w-5 mr-3 text-gray-500 mt-0.5" />
-                        <div>
-                          <p className="font-medium">Email</p>
-                          <a href={`mailto:${job.contact.email}`} className="text-rwandan-blue hover:underline">
-                            {job.contact.email}
-                          </a>
-                        </div>
-                      </div>
-                      
-                      {job.contact.phone && (
-                        <div className="flex items-start">
-                          <Phone className="h-5 w-5 mr-3 text-gray-500 mt-0.5" />
-                          <div>
-                            <p className="font-medium">Phone</p>
-                            <a href={`tel:${job.contact.phone}`} className="text-rwandan-blue hover:underline">
-                              {job.contact.phone}
-                            </a>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="font-display text-lg font-semibold mb-4">About {job.company}</h3>
-                    <p className="text-gray-700 mb-4">
-                      {job.company} is a leading organization in the {job.category.toLowerCase()} industry in Rwanda, 
-                      committed to excellence and innovation.
-                    </p>
-                    <Button variant="outline" className="w-full">
-                      Company Profile
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
+              <h1 className="heading-2 mb-2">{job.title}</h1>
+              <p className="text-gray-600">
+                <Link to={`/company/${job.company.toLowerCase().replace(/\s+/g, '-')}`} className="hover:underline">
+                  {job.company}
+                </Link>
+              </p>
+            </div>
+            <img src={job.logo} alt={job.company} className="w-20 h-20 rounded-lg object-cover" />
+          </div>
+          
+          <div className="flex flex-wrap gap-4 text-gray-500">
+            <div className="flex items-center">
+              <MapPin className="h-4 w-4 mr-2" />
+              <span>{job.location}</span>
+            </div>
+            <div className="flex items-center">
+              <Briefcase className="h-4 w-4 mr-2" />
+              <span>{job.type}</span>
+            </div>
+            <div className="flex items-center">
+              <Clock className="h-4 w-4 mr-2" />
+              <span>Posted {job.posted}</span>
+            </div>
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-2" />
+              <span>Closing Date: {job.closingDate}</span>
             </div>
           </div>
         </div>
-      </main>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+          <div className="lg:col-span-2">
+            <Tabs defaultValue="description">
+              <TabsList className="mb-6">
+                <TabsTrigger value="description">Job Description</TabsTrigger>
+                <TabsTrigger value="requirements">Requirements</TabsTrigger>
+                <TabsTrigger value="benefits">Benefits</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="description">
+                <div className="prose max-w-none">
+                  <h2 className="heading-3 mb-4">About the Job</h2>
+                  <p>{job.description}</p>
+                  
+                  <h3 className="font-semibold text-lg mt-6 mb-3">Key Responsibilities:</h3>
+                  <ul className="list-disc pl-5 space-y-2">
+                    {job.responsibilities.map((responsibility, index) => (
+                      <li key={index}>{responsibility}</li>
+                    ))}
+                  </ul>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="requirements">
+                <div className="prose max-w-none">
+                  <h2 className="heading-3 mb-4">Requirements</h2>
+                  <ul className="list-disc pl-5 space-y-2">
+                    {job.requirements.map((req, index) => (
+                      <li key={index}>{req}</li>
+                    ))}
+                  </ul>
+                  
+                  <h3 className="font-semibold text-lg mt-6 mb-3">Education & Experience</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <GraduationCap className="h-5 w-5 text-gray-500 mb-2" />
+                      <h4 className="font-medium">Education</h4>
+                      <p className="text-gray-600">{job.education}</p>
+                    </div>
+                    <div>
+                      <Banknote className="h-5 w-5 text-gray-500 mb-2" />
+                      <h4 className="font-medium">Experience</h4>
+                      <p className="text-gray-600">{job.experience}</p>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="benefits">
+                <div className="prose max-w-none">
+                  <h2 className="heading-3 mb-4">Employee Benefits</h2>
+                  <ul className="list-disc pl-5 space-y-2">
+                    {job.benefits.map((benefit, index) => (
+                      <li key={index} className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                        <span>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+          
+          <div className="space-y-6">
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-xl mb-4">Apply for this Job</h3>
+                <p className="text-gray-600 mb-4">
+                  Interested in this exciting opportunity? Click the button below to submit your application.
+                </p>
+                <div className="flex items-center text-gray-500 mb-4">
+                  <Users className="h-4 w-4 mr-2" />
+                  <span>{job.applications} applicants</span>
+                </div>
+                <Button asChild>
+                  <Link to={`/jobs/${job.id}/apply`} className="w-full">
+                    Apply Now
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <CompanyProfile company={companyData} />
+          </div>
+        </div>
+        
+        <div className="mt-12">
+          <h2 className="heading-3 mb-6">Similar Jobs</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Example similar jobs (replace with actual data) */}
+            <Card className="bg-gray-50 border border-gray-100">
+              <CardContent className="p-5">
+                <h3 className="font-medium text-lg mb-2">Similar Job Title 1</h3>
+                <p className="text-gray-600 text-sm">Similar Company Name</p>
+                <div className="flex items-center text-gray-500 text-sm mt-2">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  <span>Kigali</span>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gray-50 border border-gray-100">
+              <CardContent className="p-5">
+                <h3 className="font-medium text-lg mb-2">Similar Job Title 2</h3>
+                <p className="text-gray-600 text-sm">Another Company Ltd</p>
+                <div className="flex items-center text-gray-500 text-sm mt-2">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  <span>Musanze</span>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gray-50 border border-gray-100">
+              <CardContent className="p-5">
+                <h3 className="font-medium text-lg mb-2">Similar Job Title 3</h3>
+                <p className="text-gray-600 text-sm">Yet Another Company</p>
+                <div className="flex items-center text-gray-500 text-sm mt-2">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  <span>Kigali</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
       
       <Footer />
     </div>

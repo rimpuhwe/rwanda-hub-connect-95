@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
@@ -30,6 +29,10 @@ const BlogDetailPage = () => {
   const blog = getBlogById(id || '');
   const relatedBlogs = getBlogs()
     .filter(b => b.id !== id && b.category === blog?.category)
+    .slice(0, 3);
+  
+  const authorBlogs = getBlogs()
+    .filter(b => b.id !== id && blog && b.author.name === blog.author.name)
     .slice(0, 3);
   
   const [isLiked, setIsLiked] = useState(false);
@@ -155,6 +158,10 @@ const BlogDetailPage = () => {
           : comment
       )
     );
+  };
+
+  const viewAuthorArticles = () => {
+    navigate(`/blog?author=${blog?.author.name}`);
   };
 
   return (
@@ -350,9 +357,43 @@ const BlogDetailPage = () => {
                   <p className="text-gray-700 text-sm mb-4">
                     Passionate about exploring Rwanda's diverse landscapes and sharing authentic travel experiences with global audiences.
                   </p>
-                  <Button variant="outline" className="w-full">View All Articles</Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={viewAuthorArticles}
+                  >
+                    View All Articles by {blog?.author.name.split(' ')[0]}
+                  </Button>
                 </CardContent>
               </Card>
+              
+              {authorBlogs.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="font-display text-xl font-semibold mb-4">More from {blog?.author.name}</h3>
+                  <div className="space-y-6">
+                    {authorBlogs.map((authorBlog) => (
+                      <Link to={`/blog/${authorBlog.id}`} key={`author-${authorBlog.id}`}>
+                        <div className="flex gap-4 group">
+                          <img 
+                            src={authorBlog.image} 
+                            alt={authorBlog.title}
+                            className="w-24 h-20 object-cover rounded"
+                          />
+                          <div>
+                            <h4 className="font-medium group-hover:text-rwandan-blue transition-colors line-clamp-2">
+                              {authorBlog.title}
+                            </h4>
+                            <div className="flex items-center text-gray-500 text-xs mt-1">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              <span>{authorBlog.date}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               <div>
                 <h3 className="font-display text-xl font-semibold mb-4">Related Articles</h3>

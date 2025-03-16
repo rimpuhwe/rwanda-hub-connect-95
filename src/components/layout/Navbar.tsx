@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, Menu, X, User, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -10,13 +9,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { toast } from 'sonner';
 
 export const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -56,6 +72,25 @@ export const Navbar = () => {
     localStorage.removeItem('currentUser');
     setCurrentUser(null);
     toast.success('Logged out successfully');
+  };
+
+  const handleSearchSelect = (value: string) => {
+    setIsSearchOpen(false);
+    
+    // Navigate based on the search result category
+    if (value.startsWith('hotel:') || value.startsWith('airbnb:')) {
+      const [type, id] = value.split(':');
+      navigate(`/services/${type}/${id}`);
+    } else if (value.startsWith('blog:')) {
+      const id = value.replace('blog:', '');
+      navigate(`/blog/${id}`);
+    } else if (value.startsWith('job:')) {
+      const id = value.replace('job:', '');
+      navigate(`/jobs/${id}`);
+    } else {
+      // Default search results page
+      navigate(`/search?q=${encodeURIComponent(value)}`);
+    }
   };
 
   return (
@@ -111,7 +146,10 @@ export const Navbar = () => {
 
         {/* Action buttons */}
         <div className="hidden md:flex items-center space-x-4">
-          <button className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-300">
+          <button 
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-300"
+            onClick={() => setIsSearchOpen(true)}
+          >
             <Search className="h-5 w-5 text-gray-700" />
           </button>
           
@@ -248,6 +286,70 @@ export const Navbar = () => {
             </nav>
           </div>
         </div>
+
+        {/* Search Dialog */}
+        <CommandDialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+          <CommandInput placeholder="Search for accommodations, blogs, jobs..." />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup heading="Hotels">
+              <CommandItem onSelect={() => handleSearchSelect('hotel:hotel-1')}>
+                <div className="flex flex-col">
+                  <span>Kigali Marriott Hotel</span>
+                  <span className="text-xs text-gray-500">Kigali City Center</span>
+                </div>
+              </CommandItem>
+              <CommandItem onSelect={() => handleSearchSelect('hotel:hotel-2')}>
+                <div className="flex flex-col">
+                  <span>Serena Hotel Rwanda</span>
+                  <span className="text-xs text-gray-500">Kiyovu, Kigali</span>
+                </div>
+              </CommandItem>
+            </CommandGroup>
+            <CommandGroup heading="Airbnbs">
+              <CommandItem onSelect={() => handleSearchSelect('airbnb:airbnb-1')}>
+                <div className="flex flex-col">
+                  <span>Modern Lake Kivu Villa</span>
+                  <span className="text-xs text-gray-500">Rubavu, Lake Kivu</span>
+                </div>
+              </CommandItem>
+              <CommandItem onSelect={() => handleSearchSelect('airbnb:airbnb-2')}>
+                <div className="flex flex-col">
+                  <span>Cozy Musanze Cottage</span>
+                  <span className="text-xs text-gray-500">Musanze, Northern Province</span>
+                </div>
+              </CommandItem>
+            </CommandGroup>
+            <CommandGroup heading="Blogs">
+              <CommandItem onSelect={() => handleSearchSelect('blog:1')}>
+                <div className="flex flex-col">
+                  <span>10 Must-Visit Places in Rwanda</span>
+                  <span className="text-xs text-gray-500">Travel Guide</span>
+                </div>
+              </CommandItem>
+              <CommandItem onSelect={() => handleSearchSelect('blog:2')}>
+                <div className="flex flex-col">
+                  <span>Rwanda's Wildlife: What to Expect</span>
+                  <span className="text-xs text-gray-500">Nature & Wildlife</span>
+                </div>
+              </CommandItem>
+            </CommandGroup>
+            <CommandGroup heading="Jobs">
+              <CommandItem onSelect={() => handleSearchSelect('job:1')}>
+                <div className="flex flex-col">
+                  <span>Hotel Manager</span>
+                  <span className="text-xs text-gray-500">Kigali Marriott Hotel</span>
+                </div>
+              </CommandItem>
+              <CommandItem onSelect={() => handleSearchSelect('job:2')}>
+                <div className="flex flex-col">
+                  <span>Front Desk Receptionist</span>
+                  <span className="text-xs text-gray-500">Radisson Blu Hotel</span>
+                </div>
+              </CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </CommandDialog>
       </div>
     </header>
   );
