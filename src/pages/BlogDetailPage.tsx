@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
@@ -49,7 +50,7 @@ const BlogDetailPage = () => {
         id: 'comment-1',
         userId: 'user-1',
         userName: 'Sarah Johnson',
-        content: 'This article was incredibly insightful! I'm planning my trip to Rwanda now and this information will be very helpful.',
+        content: "This article was incredibly insightful! I'm planning my trip to Rwanda now and this information will be very helpful.",
         createdAt: '2023-05-15T10:23:00Z',
         likes: 4
       },
