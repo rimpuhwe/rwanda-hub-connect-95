@@ -17,6 +17,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import UserAccountPage from "./pages/UserAccountPage";
 import NotFound from "./pages/NotFound";
+import { PageLayout } from "./components/layout/PageLayout";
 
 const queryClient = new QueryClient();
 
@@ -28,19 +29,21 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/services" element={<ServicesPage />} />
-          <Route path="/services/:type" element={<ServicesPage />} />
-          <Route path="/services/:type/:id" element={<ServiceDetailPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/blog" element={<BlogPage />} />
-          <Route path="/blog/:id" element={<BlogDetailPage />} />
-          <Route path="/jobs" element={<JobsPage />} />
-          <Route path="/jobs/:id" element={<JobDetailPage />} />
-          <Route path="/jobs/:id/apply" element={<JobApplicationPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/account" element={<UserAccountPage />} />
-          <Route path="*" element={<NotFound />} />
+          
+          {/* Wrap all non-home pages with PageLayout for consistent padding */}
+          <Route path="/services" element={<PageLayout><ServicesPage /></PageLayout>} />
+          <Route path="/services/:type" element={<PageLayout><ServicesPage /></PageLayout>} />
+          <Route path="/services/:type/:id" element={<PageLayout><ServiceDetailPage /></PageLayout>} />
+          <Route path="/about" element={<PageLayout><AboutPage /></PageLayout>} />
+          <Route path="/blog" element={<PageLayout><BlogPage /></PageLayout>} />
+          <Route path="/blog/:id" element={<PageLayout><BlogDetailPage /></PageLayout>} />
+          <Route path="/jobs" element={<PageLayout><JobsPage /></PageLayout>} />
+          <Route path="/jobs/:id" element={<PageLayout><JobDetailPage /></PageLayout>} />
+          <Route path="/jobs/:id/apply" element={<PageLayout><JobApplicationPage /></PageLayout>} />
+          <Route path="/login" element={<PageLayout><LoginPage /></PageLayout>} />
+          <Route path="/register" element={<PageLayout><RegisterPage /></PageLayout>} />
+          <Route path="/account" element={<PageLayout><UserAccountPage /></PageLayout>} />
+          <Route path="*" element={<PageLayout><NotFound /></PageLayout>} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
