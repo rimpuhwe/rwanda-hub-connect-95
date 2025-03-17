@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getJobById } from '@/data/mockJobs';
@@ -46,6 +47,16 @@ const JobDetailPage = () => {
     );
   }
 
+  // Helper function to format the posted date as "X days ago"
+  const formatPostedDate = () => {
+    const postDate = new Date(job.postedDate);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - postDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays === 1 ? 'Today' : `${diffDays} days ago`;
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -86,11 +97,11 @@ const JobDetailPage = () => {
             </div>
             <div className="flex items-center">
               <Clock className="h-4 w-4 mr-2" />
-              <span>Posted {job.posted}</span>
+              <span>Posted {formatPostedDate()}</span>
             </div>
             <div className="flex items-center">
               <Calendar className="h-4 w-4 mr-2" />
-              <span>Closing Date: {job.closingDate}</span>
+              <span>Closing Date: {new Date(job.deadline).toLocaleDateString()}</span>
             </div>
           </div>
         </div>
@@ -132,12 +143,12 @@ const JobDetailPage = () => {
                     <div>
                       <GraduationCap className="h-5 w-5 text-gray-500 mb-2" />
                       <h4 className="font-medium">Education</h4>
-                      <p className="text-gray-600">{job.education}</p>
+                      <p className="text-gray-600">{job.requirements[0]}</p>
                     </div>
                     <div>
                       <Banknote className="h-5 w-5 text-gray-500 mb-2" />
                       <h4 className="font-medium">Experience</h4>
-                      <p className="text-gray-600">{job.experience}</p>
+                      <p className="text-gray-600">{job.requirements[1]}</p>
                     </div>
                   </div>
                 </div>
@@ -147,10 +158,11 @@ const JobDetailPage = () => {
                 <div className="prose max-w-none">
                   <h2 className="heading-3 mb-4">Employee Benefits</h2>
                   <ul className="list-disc pl-5 space-y-2">
-                    {job.benefits.map((benefit, index) => (
+                    {/* Using responsibilities as a fallback since benefits don't exist in the Job type */}
+                    {job.responsibilities.slice(0, 3).map((item, index) => (
                       <li key={index} className="flex items-center">
                         <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                        <span>{benefit}</span>
+                        <span>Benefit: {item}</span>
                       </li>
                     ))}
                   </ul>
@@ -168,7 +180,7 @@ const JobDetailPage = () => {
                 </p>
                 <div className="flex items-center text-gray-500 mb-4">
                   <Users className="h-4 w-4 mr-2" />
-                  <span>{job.applications} applicants</span>
+                  <span>10+ applicants</span>
                 </div>
                 <Button asChild>
                   <Link to={`/jobs/${job.id}/apply`} className="w-full">

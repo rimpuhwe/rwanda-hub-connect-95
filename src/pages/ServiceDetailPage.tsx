@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
@@ -7,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { ArrowLeft, MapPin, Wifi, Check, X, UtilityPole, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, MapPin, Wifi, Check, X, UtilityPole, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { getServiceById } from '@/data/mockServices';
 import { format } from 'date-fns';
 import { Rating } from '@/components/ui/Rating';
