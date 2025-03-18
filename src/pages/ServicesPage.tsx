@@ -7,17 +7,33 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Slider } from '@/components/ui/slider';
+import { Calendar } from '@/components/ui/calendar';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getServicesByType, Service } from '@/data/mockServices';
-import { MapPin, Star, Search, Filter } from 'lucide-react';
+import { format } from 'date-fns';
+import { MapPin, Star, Search, Filter, Calendar as CalendarIcon, Wifi, Utensils, Tv, Car, Check } from 'lucide-react';
 
 const ServicesPage = () => {
   const { type } = useParams();
   const [activeTab, setActiveTab] = useState<string>(type || 'all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [priceRange, setPriceRange] = useState<string>('all');
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
   const [services, setServices] = useState<Service[]>([]);
   const [filteredServices, setFilteredServices] = useState<Service[]>([]);
+  const [dateRange, setDateRange] = useState<{
+    from: Date;
+    to?: Date;
+  } | undefined>(undefined);
+  const [guests, setGuests] = useState(2);
+  const [location, setLocation] = useState<string>('all');
+  const [amenities, setAmenities] = useState<string[]>([]);
+  const [propertyType, setPropertyType] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('recommended');
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
 
   useEffect(() => {
     const allServices = getServicesByType(activeTab === 'all' ? undefined : activeTab);
@@ -28,29 +44,83 @@ const ServicesPage = () => {
   useEffect(() => {
     let filtered = [...services];
     
+    // Filter by search query
     if (searchQuery) {
       filtered = filtered.filter(
         service => 
           service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          service.location.toLowerCase().includes(searchQuery.toLowerCase())
+          service.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          service.description.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
-    if (priceRange !== 'all') {
-      const [min, max] = priceRange.split('-').map(Number);
-      filtered = filtered.filter(
-        service => service.price >= min && (max ? service.price <= max : true)
+    // Filter by price range
+    filtered = filtered.filter(
+      service => service.price >= priceRange[0] && service.price <= priceRange[1]
+    );
+    
+    // Filter by location
+    if (location !== 'all') {
+      filtered = filtered.filter(service => service.location === location);
+    }
+    
+    // Filter by amenities
+    if (amenities.length > 0) {
+      filtered = filtered.filter(service => 
+        amenities.every(amenity => 
+          service.amenities.some(a => a.toLowerCase().includes(amenity.toLowerCase()))
+        )
       );
+    }
+    
+    // Filter by property type
+    if (propertyType !== 'all') {
+      filtered = filtered.filter(service => service.type === propertyType);
+    }
+    
+    // Sort results
+    if (sortBy === 'price-low') {
+      filtered.sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'price-high') {
+      filtered.sort((a, b) => b.price - a.price);
+    } else if (sortBy === 'rating') {
+      filtered.sort((a, b) => b.rating - a.rating);
     }
     
     setFilteredServices(filtered);
-  }, [searchQuery, priceRange, services]);
+  }, [searchQuery, priceRange, location, amenities, propertyType, sortBy, services]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setSearchQuery('');
-    setPriceRange('all');
+    setPriceRange([0, 500]);
+    setDateRange(undefined);
+    setGuests(2);
+    setLocation('all');
+    setAmenities([]);
+    setPropertyType('all');
+    setSortBy('recommended');
   };
+
+  const handleAmenityToggle = (amenity: string) => {
+    if (amenities.includes(amenity)) {
+      setAmenities(amenities.filter(a => a !== amenity));
+    } else {
+      setAmenities([...amenities, amenity]);
+    }
+  };
+
+  const resetFilters = () => {
+    setPriceRange([0, 500]);
+    setDateRange(undefined);
+    setGuests(2);
+    setLocation('all');
+    setAmenities([]);
+    setPropertyType('all');
+    setSortBy('recommended');
+  };
+
+  const availableLocations = ['Kigali', 'Musanze', 'Nyungwe', 'Akagera', 'Rubavu', 'Karongi'];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -73,32 +143,240 @@ const ServicesPage = () => {
             </TabsList>
           </div>
           
-          <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <div className="relative flex-grow">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by name or location..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
+          <div className="mb-8">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="md:col-span-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                    <Input
+                      placeholder="Search by name, location, or description..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 py-6 text-lg"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateRange?.from ? (
+                          dateRange.to ? (
+                            <>
+                              {format(dateRange.from, "MMM d")} - {format(dateRange.to, "MMM d, yyyy")}
+                            </>
+                          ) : (
+                            format(dateRange.from, "MMM d, yyyy")
+                          )
+                        ) : (
+                          "Check-in & Check-out"
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="range"
+                        selected={dateRange}
+                        onSelect={setDateRange}
+                        numberOfMonths={2}
+                        disabled={(date) => date < new Date()}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                <div>
+                  <Select value={location} onValueChange={setLocation}>
+                    <SelectTrigger>
+                      <MapPin className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Locations</SelectItem>
+                      {availableLocations.map(loc => (
+                        <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <div className="flex border rounded">
+                    <span className="px-4 py-2 border-r bg-gray-50 flex items-center">
+                      Guests
+                    </span>
+                    <button 
+                      className="px-4 py-2 border-r" 
+                      onClick={() => setGuests(g => Math.max(1, g - 1))}
+                    >
+                      -
+                    </button>
+                    <div className="flex-grow text-center py-2">{guests}</div>
+                    <button 
+                      className="px-4 py-2 border-l"
+                      onClick={() => setGuests(g => Math.min(10, g + 1))}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="md:col-span-4 flex justify-between">
+                  <Popover open={filterMenuOpen} onOpenChange={setFilterMenuOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline">
+                        <Filter className="mr-2 h-4 w-4" />
+                        More Filters
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[340px] p-5" align="start">
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="font-medium mb-3">Price Range per night</h3>
+                          <div className="px-2">
+                            <Slider
+                              defaultValue={[0, 500]}
+                              value={priceRange}
+                              min={0}
+                              max={500}
+                              step={10}
+                              onValueChange={(value: [number, number]) => setPriceRange(value)}
+                            />
+                            <div className="flex justify-between mt-2 text-sm">
+                              <span>${priceRange[0]}</span>
+                              <span>${priceRange[1]}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h3 className="font-medium mb-3">Property Type</h3>
+                          <Select value={propertyType} onValueChange={setPropertyType}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="All Types" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Types</SelectItem>
+                              <SelectItem value="hotel">Hotel</SelectItem>
+                              <SelectItem value="airbnb">Airbnb</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <Accordion type="single" collapsible className="w-full">
+                          <AccordionItem value="amenities">
+                            <AccordionTrigger>Amenities</AccordionTrigger>
+                            <AccordionContent>
+                              <div className="space-y-2">
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox 
+                                    id="wifi" 
+                                    checked={amenities.includes('wifi')} 
+                                    onCheckedChange={() => handleAmenityToggle('wifi')}
+                                  />
+                                  <label htmlFor="wifi" className="flex items-center">
+                                    <Wifi className="h-4 w-4 mr-2" /> WiFi
+                                  </label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox 
+                                    id="kitchen" 
+                                    checked={amenities.includes('kitchen')} 
+                                    onCheckedChange={() => handleAmenityToggle('kitchen')}
+                                  />
+                                  <label htmlFor="kitchen" className="flex items-center">
+                                    <Utensils className="h-4 w-4 mr-2" /> Kitchen
+                                  </label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox 
+                                    id="tv" 
+                                    checked={amenities.includes('tv')} 
+                                    onCheckedChange={() => handleAmenityToggle('tv')}
+                                  />
+                                  <label htmlFor="tv" className="flex items-center">
+                                    <Tv className="h-4 w-4 mr-2" /> TV
+                                  </label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox 
+                                    id="parking" 
+                                    checked={amenities.includes('parking')} 
+                                    onCheckedChange={() => handleAmenityToggle('parking')}
+                                  />
+                                  <label htmlFor="parking" className="flex items-center">
+                                    <Car className="h-4 w-4 mr-2" /> Parking
+                                  </label>
+                                </div>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+                        
+                        <div className="flex justify-between pt-4 border-t">
+                          <Button variant="outline" onClick={resetFilters}>Reset</Button>
+                          <Button onClick={() => setFilterMenuOpen(false)}>Apply Filters</Button>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <div className="flex items-center">
+                    <span className="text-sm mr-2">Sort by:</span>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Sort Results" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="recommended">Recommended</SelectItem>
+                        <SelectItem value="price-low">Price: Low to High</SelectItem>
+                        <SelectItem value="price-high">Price: High to Low</SelectItem>
+                        <SelectItem value="rating">Top Rated</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
+          
+          <div className="mb-4 flex flex-wrap gap-2">
+            {searchQuery && (
+              <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
+                <span>Search: {searchQuery}</span>
+                <button className="ml-2" onClick={() => setSearchQuery('')}>×</button>
+              </div>
+            )}
             
-            <div className="md:w-64">
-              <Select value={priceRange} onValueChange={setPriceRange}>
-                <SelectTrigger>
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Price Range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Prices</SelectItem>
-                  <SelectItem value="0-100">$0 - $100</SelectItem>
-                  <SelectItem value="100-200">$100 - $200</SelectItem>
-                  <SelectItem value="200-300">$200 - $300</SelectItem>
-                  <SelectItem value="300-">$300+</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {priceRange[0] > 0 || priceRange[1] < 500 ? (
+              <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
+                <span>Price: ${priceRange[0]} - ${priceRange[1]}</span>
+                <button className="ml-2" onClick={() => setPriceRange([0, 500])}>×</button>
+              </div>
+            ) : null}
+            
+            {location !== 'all' && (
+              <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
+                <span>Location: {location}</span>
+                <button className="ml-2" onClick={() => setLocation('all')}>×</button>
+              </div>
+            )}
+            
+            {amenities.map((amenity) => (
+              <div key={amenity} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
+                <span>Amenity: {amenity}</span>
+                <button className="ml-2" onClick={() => handleAmenityToggle(amenity)}>×</button>
+              </div>
+            ))}
+            
+            {(priceRange[0] > 0 || priceRange[1] < 500 || location !== 'all' || amenities.length > 0 || propertyType !== 'all') && (
+              <Button variant="outline" size="sm" onClick={resetFilters}>
+                Clear All Filters
+              </Button>
+            )}
           </div>
 
           <TabsContent value="all" className="mt-0">
@@ -121,6 +399,48 @@ const ServicesPage = () => {
 };
 
 const ServiceGrid = ({ services }: { services: Service[] }) => {
+  const [favorites, setFavorites] = useState<string[]>([]);
+  
+  useEffect(() => {
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+      const userData = JSON.parse(currentUser);
+      if (userData.savedListings) {
+        setFavorites(userData.savedListings);
+      }
+    }
+  }, []);
+  
+  const toggleFavorite = (serviceId: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) {
+      toast.error('Please log in to save favorites');
+      return;
+    }
+    
+    const userData = JSON.parse(currentUser);
+    if (!userData.savedListings) {
+      userData.savedListings = [];
+    }
+    
+    if (favorites.includes(serviceId)) {
+      // Remove from favorites
+      userData.savedListings = userData.savedListings.filter((id: string) => id !== serviceId);
+      setFavorites(prev => prev.filter(id => id !== serviceId));
+      toast.success('Removed from favorites');
+    } else {
+      // Add to favorites
+      userData.savedListings.push(serviceId);
+      setFavorites(prev => [...prev, serviceId]);
+      toast.success('Added to favorites');
+    }
+    
+    localStorage.setItem('currentUser', JSON.stringify(userData));
+  };
+
   if (services.length === 0) {
     return (
       <div className="text-center py-12">
@@ -135,12 +455,22 @@ const ServiceGrid = ({ services }: { services: Service[] }) => {
       {services.map((service) => (
         <Link to={`/services/${service.type}/${service.id}`} key={service.id}>
           <Card className="overflow-hidden hover-lift h-full">
-            <div className="h-48 overflow-hidden">
+            <div className="h-48 overflow-hidden relative">
               <img 
                 src={service.images[0]} 
                 alt={service.name}
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
               />
+              <button 
+                onClick={(e) => toggleFavorite(service.id, e)}
+                className={`absolute top-2 right-2 p-2 rounded-full ${
+                  favorites.includes(service.id) 
+                    ? 'bg-red-100 text-red-500' 
+                    : 'bg-white/80 text-gray-600'
+                }`}
+              >
+                <Heart className={`h-5 w-5 ${favorites.includes(service.id) ? 'fill-current' : ''}`} />
+              </button>
             </div>
             <CardContent className="p-5">
               <div className="flex justify-between items-start mb-2">
