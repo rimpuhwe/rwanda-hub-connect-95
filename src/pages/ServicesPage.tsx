@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
@@ -18,8 +17,9 @@ import {
   getProvinces, 
   getDistrictsByProvince, 
   filterServicesByLocation, 
-  Service 
+  Service
 } from '@/data/mockServices';
+import { fetchAccommodations, mapPlaceToService } from '@/services/placesApi';
 import { format } from 'date-fns';
 import { MapPin, Star, Search, Filter, Calendar as CalendarIcon, Wifi, Utensils, Tv, Car, Heart, Users, Bed, Bath, PawPrint } from 'lucide-react';
 import { toast } from "sonner";
@@ -30,7 +30,9 @@ const ServicesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
   const [services, setServices] = useState<Service[]>([]);
-  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
+  const [googleServices, setGoogleServices] = useState<any[]>([]);
+  const [filteredServices, setFilteredServices] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [dateRange, setDateRange] = useState<{
     from: Date;
     to?: Date;
@@ -53,11 +55,47 @@ const ServicesPage = () => {
   // Get provinces for filter
   const provinces = getProvinces();
 
+  // Fetch data from Google Places API
   useEffect(() => {
-    const allServices = getServicesByType(activeTab === 'all' ? undefined : activeTab);
-    setServices(allServices);
-    setFilteredServices(allServices);
-  }, [activeTab]);
+    const fetchGooglePlaces = async () => {
+      setIsLoading(true);
+      try {
+        // Get places from Google Places API
+        const provinceName = province !== 'all' ? province : 'Rwanda';
+        const districtName = district !== 'all' ? district : undefined;
+        const results = await fetchAccommodations(provinceName, districtName);
+        
+        // Map Google Places results to our format
+        const mappedResults = results.map(place => 
+          mapPlaceToService(place, activeTab === 'hotel' ? 'hotel' : 'airbnb')
+        );
+        
+        // Filter by type if specified
+        const filteredResults = activeTab === 'all' 
+          ? mappedResults 
+          : mappedResults.filter(service => service.type === activeTab);
+        
+        setGoogleServices(filteredResults);
+      } catch (error) {
+        console.error('Failed to fetch from Google Places API:', error);
+        // Fallback to mock data
+        const mockData = getServicesByType(activeTab === 'all' ? undefined : activeTab);
+        setServices(mockData);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchGooglePlaces();
+  }, [activeTab, province, district]);
+
+  // Fall back to mock data if Google API fails
+  useEffect(() => {
+    if (googleServices.length === 0 && !isLoading) {
+      const allServices = getServicesByType(activeTab === 'all' ? undefined : activeTab);
+      setServices(allServices);
+    }
+  }, [activeTab, googleServices, isLoading]);
 
   // Update available districts when province changes
   useEffect(() => {
@@ -75,39 +113,32 @@ const ServicesPage = () => {
     }
   }, [province, district]);
 
+  // Apply filters to the services (Google API or fallback mock data)
   useEffect(() => {
-    let filtered = [...services];
+    // Use Google services if available, otherwise fall back to mock data
+    let filtered = googleServices.length > 0 ? [...googleServices] : [...services];
     
     // Filter by search query
     if (searchQuery) {
       filtered = filtered.filter(
         service => 
-          service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          service.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          service.description.toLowerCase().includes(searchQuery.toLowerCase())
+          service.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          service.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          service.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
     // Filter by price range
     filtered = filtered.filter(
-      service => service.price >= priceRange[0] && service.price <= priceRange[1]
+      service => service.pricePerNight >= priceRange[0] && service.pricePerNight <= priceRange[1]
     );
-    
-    // Filter by province and district
-    if (province !== 'all' || district !== 'all') {
-      filtered = filterServicesByLocation(
-        filtered, 
-        province === 'all' ? undefined : province,
-        district === 'all' ? undefined : district
-      );
-    }
     
     // Filter by amenities
     if (amenities.length > 0) {
       filtered = filtered.filter(service => 
-        amenities.every(amenity => 
-          service.amenities.some(a => a.toLowerCase().includes(amenity.toLowerCase()))
-        )
+        service.amenities ? amenities.every(amenity => 
+          service.amenities.some((a: string) => a.toLowerCase().includes(amenity.toLowerCase()))
+        ) : false
       );
     }
     
@@ -143,9 +174,9 @@ const ServicesPage = () => {
     
     // Sort results
     if (sortBy === 'price-low') {
-      filtered.sort((a, b) => a.price - b.price);
+      filtered.sort((a, b) => a.pricePerNight - b.pricePerNight);
     } else if (sortBy === 'price-high') {
-      filtered.sort((a, b) => b.price - a.price);
+      filtered.sort((a, b) => b.pricePerNight - a.pricePerNight);
     } else if (sortBy === 'rating') {
       filtered.sort((a, b) => b.rating - a.rating);
     }
@@ -153,7 +184,8 @@ const ServicesPage = () => {
     setFilteredServices(filtered);
   }, [
     searchQuery, priceRange, province, district, amenities, 
-    propertyType, sortBy, services, rooms, beds, bathrooms, acceptsPets
+    propertyType, sortBy, services, rooms, beds, bathrooms, acceptsPets,
+    googleServices
   ]);
 
   const handleTabChange = (value: string) => {
@@ -597,6 +629,7 @@ const ServicesPage = () => {
               beds={beds}
               bathrooms={bathrooms}
               acceptsPets={acceptsPets}
+              isLoading={isLoading}
             />
           </TabsContent>
           
@@ -607,6 +640,7 @@ const ServicesPage = () => {
               beds={beds}
               bathrooms={bathrooms}
               acceptsPets={acceptsPets}
+              isLoading={isLoading}
             />
           </TabsContent>
           
@@ -617,6 +651,7 @@ const ServicesPage = () => {
               beds={beds}
               bathrooms={bathrooms}
               acceptsPets={acceptsPets}
+              isLoading={isLoading}
             />
           </TabsContent>
         </Tabs>
@@ -632,13 +667,15 @@ const ServiceGrid = ({
   rooms = 1,
   beds = 1,
   bathrooms = 1,
-  acceptsPets = false
+  acceptsPets = false,
+  isLoading = false
 }: { 
-  services: Service[];
+  services: any[];
   rooms?: number;
   beds?: number;
   bathrooms?: number;
   acceptsPets?: boolean;
+  isLoading?: boolean;
 }) => {
   const [favorites, setFavorites] = useState<string[]>([]);
   
@@ -689,6 +726,36 @@ const ServiceGrid = ({
     localStorage.setItem('currentUser', JSON.stringify(userData));
   };
 
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array(6).fill(0).map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <Card className="overflow-hidden h-full">
+              <div className="h-48 bg-gray-300"></div>
+              <CardContent className="p-5 space-y-2">
+                <div className="flex justify-between">
+                  <div className="h-6 bg-gray-300 rounded w-3/4"></div>
+                  <div className="h-6 bg-gray-300 rounded w-16"></div>
+                </div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                <div className="flex gap-2">
+                  <div className="h-6 bg-gray-200 rounded w-16"></div>
+                  <div className="h-6 bg-gray-200 rounded w-16"></div>
+                </div>
+                <div className="h-20 bg-gray-200 rounded"></div>
+                <div className="flex justify-between items-center pt-2">
+                  <div className="h-6 bg-gray-300 rounded w-1/4"></div>
+                  <div className="h-8 bg-gray-300 rounded w-24"></div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (services.length === 0) {
     return (
       <div className="text-center py-12">
@@ -705,8 +772,8 @@ const ServiceGrid = ({
           <Card className="overflow-hidden hover-lift h-full">
             <div className="h-48 overflow-hidden relative">
               <img 
-                src={service.images[0]} 
-                alt={service.name}
+                src={service.image} 
+                alt={service.title}
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
               />
               <button 
@@ -722,7 +789,7 @@ const ServiceGrid = ({
             </div>
             <CardContent className="p-5">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-display font-semibold text-xl">{service.name}</h3>
+                <h3 className="font-display font-semibold text-xl">{service.title}</h3>
                 <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full capitalize">
                   {service.type}
                 </span>
@@ -731,7 +798,7 @@ const ServiceGrid = ({
               <div className="flex items-center text-gray-500 mb-2">
                 <MapPin className="h-4 w-4 mr-1" />
                 <span className="text-sm">
-                  {service.location}
+                  {service.vicinity || service.location}
                   {service.district && (
                     <span className="font-medium ml-1">
                       ({service.district} District)
@@ -743,9 +810,11 @@ const ServiceGrid = ({
               <div className="flex items-center mb-3">
                 <div className="flex items-center text-yellow-500 mr-2">
                   <Star className="h-4 w-4 fill-current" />
-                  <span className="ml-1 font-medium">{service.rating}</span>
+                  <span className="ml-1 font-medium">{service.rating?.toFixed(1) || "N/A"}</span>
                 </div>
-                <span className="text-sm text-gray-500">({service.reviewCount} reviews)</span>
+                <span className="text-sm text-gray-500">
+                  ({service.reviewCount || "0"} reviews)
+                </span>
               </div>
               
               <div className="flex flex-wrap gap-2 mb-3">
@@ -771,11 +840,11 @@ const ServiceGrid = ({
                 )}
               </div>
               
-              <p className="text-gray-600 mb-4 line-clamp-2">{service.description}</p>
+              <p className="text-gray-600 mb-4 line-clamp-2">{service.description || "Beautiful accommodation in Rwanda."}</p>
               
               <div className="flex justify-between items-center">
                 <div className="font-bold text-blue-600">
-                  {service.currency} {service.price}
+                  ${service.pricePerNight}
                   <span className="text-gray-500 font-normal text-sm">/night</span>
                 </div>
                 <Button variant="outline" size="sm">View Details</Button>

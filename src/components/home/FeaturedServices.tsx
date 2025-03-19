@@ -1,15 +1,16 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, MapPin } from 'lucide-react';
 import { ServiceCard } from '../ui/ServiceCard';
 import { services } from '@/data/mockServices';
+import { fetchAccommodations, mapPlaceToService, PlaceResult } from '@/services/placesApi';
 
 export const FeaturedServices = () => {
   const [activeTab, setActiveTab] = useState<'hotels' | 'airbnb'>('hotels');
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [googleServices, setGoogleServices] = useState<any[]>([]);
   
-  // Map services to match ServiceCard props format
   const mappedServices = {
     hotels: services
       .filter(service => service.type === 'hotel')
@@ -47,14 +48,39 @@ export const FeaturedServices = () => {
       })).slice(0, 3),
   };
   
-  // Filter services by province if selected
-  const filteredServices = selectedProvince 
-    ? mappedServices[activeTab].filter(service => 
-        service.province === selectedProvince
-      )
+  useEffect(() => {
+    const fetchServices = async () => {
+      setIsLoading(true);
+      try {
+        const province = selectedProvince || 'Rwanda';
+        const results = await fetchAccommodations(province);
+        
+        const mappedPlaces = results.map(place => 
+          mapPlaceToService(place, activeTab === 'hotels' ? 'hotel' : 'airbnb')
+        );
+        
+        const filteredPlaces = mappedPlaces
+          .filter(place => activeTab === 'hotels' 
+            ? place.type === 'hotel' 
+            : place.type === 'airbnb')
+          .slice(0, 3);
+        
+        setGoogleServices(filteredPlaces);
+      } catch (error) {
+        console.error('Failed to fetch places:', error);
+        setGoogleServices([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchServices();
+  }, [activeTab, selectedProvince]);
+  
+  const filteredServices = googleServices.length > 0 
+    ? googleServices 
     : mappedServices[activeTab];
   
-  // Get unique provinces from all services
   const provinces = [...new Set(services.map(service => service.province))];
   
   return (
@@ -104,7 +130,6 @@ export const FeaturedServices = () => {
               </button>
             </div>
             
-            {/* Province filter */}
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setSelectedProvince(null)}
@@ -136,15 +161,32 @@ export const FeaturedServices = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredServices.map((service) => (
-            <ServiceCard
-              key={`${service.type}-${service.id}`}
-              {...service}
-              className="animate-zoom-in"
-            />
-          ))}
-          
-          {filteredServices.length === 0 && (
+          {isLoading ? (
+            Array(3).fill(0).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="rounded-xl overflow-hidden">
+                  <div className="h-48 bg-gray-300"></div>
+                  <div className="p-4 space-y-2">
+                    <div className="h-5 bg-gray-300 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    <div className="flex gap-2">
+                      <div className="h-6 bg-gray-200 rounded w-16"></div>
+                      <div className="h-6 bg-gray-200 rounded w-16"></div>
+                    </div>
+                    <div className="h-10 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : filteredServices.length > 0 ? (
+            filteredServices.map((service) => (
+              <ServiceCard
+                key={`${service.type}-${service.id}`}
+                {...service}
+                className="animate-zoom-in"
+              />
+            ))
+          ) : (
             <div className="col-span-3 text-center py-12">
               <p className="text-gray-500">No accommodations found in this province.</p>
               <button 

@@ -18,6 +18,10 @@ interface ServiceCardProps {
   beds?: number;
   bathrooms?: number;
   acceptsPets?: boolean;
+  // Google Places specific properties
+  placeId?: string;
+  vicinity?: string;
+  photos?: string[];
 }
 
 export const ServiceCard = ({
@@ -35,6 +39,8 @@ export const ServiceCard = ({
   beds = 1,
   bathrooms = 1,
   acceptsPets = false,
+  placeId,
+  vicinity,
 }: ServiceCardProps) => {
   return (
     <Link
@@ -72,7 +78,7 @@ export const ServiceCard = ({
         <div className="mt-1 flex items-center text-sm text-gray-600">
           <MapPin className="h-3.5 w-3.5 mr-1" />
           <span className="line-clamp-1">
-            {location}
+            {vicinity || location}
             {district && (
               <span className="font-medium ml-1">
                 ({district} District)
