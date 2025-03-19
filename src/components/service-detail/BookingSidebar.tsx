@@ -40,6 +40,15 @@ export const BookingSidebar = ({
     return service.price * days;
   };
 
+  // Helper functions to handle guest count changes
+  const decreaseGuests = () => {
+    setGuests(Math.max(1, guests - 1));
+  };
+
+  const increaseGuests = () => {
+    setGuests(Math.min(10, guests + 1));
+  };
+
   return (
     <Card className="sticky top-8">
       <CardContent className="p-6">
@@ -95,14 +104,14 @@ export const BookingSidebar = ({
           <div className="flex border rounded">
             <button 
               className="px-4 py-2 border-r" 
-              onClick={() => setGuests(g => Math.max(1, g - 1))}
+              onClick={decreaseGuests}
             >
               -
             </button>
             <div className="flex-grow text-center py-2">{guests}</div>
             <button 
               className="px-4 py-2 border-l"
-              onClick={() => setGuests(g => Math.min(10, g + 1))}
+              onClick={increaseGuests}
             >
               +
             </button>
