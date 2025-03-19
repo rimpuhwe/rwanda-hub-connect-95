@@ -8,6 +8,8 @@ interface ServiceCardProps {
   type: 'hotel' | 'airbnb';
   title: string;
   location: string;
+  province?: string;
+  district?: string;
   image: string;
   rating: number;
   pricePerNight: number;
@@ -23,6 +25,8 @@ export const ServiceCard = ({
   type,
   title,
   location,
+  province,
+  district,
   image,
   rating,
   pricePerNight,
@@ -67,7 +71,14 @@ export const ServiceCard = ({
         
         <div className="mt-1 flex items-center text-sm text-gray-600">
           <MapPin className="h-3.5 w-3.5 mr-1" />
-          <span className="line-clamp-1">{location}</span>
+          <span className="line-clamp-1">
+            {location}
+            {district && (
+              <span className="font-medium ml-1">
+                ({district} District)
+              </span>
+            )}
+          </span>
         </div>
 
         <div className="mt-2 flex flex-wrap gap-2">

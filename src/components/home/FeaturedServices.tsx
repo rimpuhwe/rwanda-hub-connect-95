@@ -1,110 +1,61 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Bed, Bath, MapPin, PawPrint } from 'lucide-react';
+import { ChevronRight, MapPin } from 'lucide-react';
 import { ServiceCard } from '../ui/ServiceCard';
-
-// Enhanced placeholder data with room options
-const FEATURED_SERVICES = {
-  hotels: [
-    {
-      id: '1',
-      type: 'hotel' as const,
-      title: 'Kigali Marriott Hotel',
-      location: 'Downtown Kigali',
-      image: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=1925',
-      rating: 4.8,
-      pricePerNight: 250,
-      rooms: 2,
-      beds: 2,
-      bathrooms: 1,
-      acceptsPets: false,
-    },
-    {
-      id: '2',
-      type: 'hotel' as const,
-      title: 'Radisson Blu Hotel & Convention Centre',
-      location: 'Kimihurura, Kigali',
-      image: 'https://images.unsplash.com/photo-1561501900-3701fa6a0864?q=80&w=2070',
-      rating: 4.9,
-      pricePerNight: 300,
-      rooms: 1,
-      beds: 1,
-      bathrooms: 1,
-      acceptsPets: false,
-    },
-    {
-      id: '3',
-      type: 'hotel' as const,
-      title: 'The Retreat by Heaven',
-      location: 'Kiyovu, Kigali',
-      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070',
-      rating: 4.7,
-      pricePerNight: 220,
-      rooms: 1,
-      beds: 2,
-      bathrooms: 1,
-      acceptsPets: true,
-    },
-  ],
-  airbnb: [
-    {
-      id: '1',
-      type: 'airbnb' as const,
-      title: 'Modern Studio with Lake Kivu View',
-      location: 'Rubavu',
-      image: 'https://images.unsplash.com/photo-1588880331179-bc9b93a8cb5e?q=80&w=2070',
-      rating: 4.9,
-      pricePerNight: 120,
-      rooms: 2,
-      beds: 2,
-      bathrooms: 2,
-      acceptsPets: true,
-    },
-    {
-      id: '2',
-      type: 'airbnb' as const,
-      title: 'Luxury Villa with Mountain Views',
-      location: 'Musanze',
-      image: 'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?q=80&w=1974',
-      rating: 4.8,
-      pricePerNight: 180,
-      rooms: 3,
-      beds: 3,
-      bathrooms: 2,
-      acceptsPets: false,
-    },
-    {
-      id: '3',
-      type: 'airbnb' as const,
-      title: 'Cozy Apartment in City Center',
-      location: 'Nyarutarama, Kigali',
-      image: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=2070',
-      rating: 4.7,
-      pricePerNight: 95,
-      rooms: 1,
-      beds: 1,
-      bathrooms: 1,
-      acceptsPets: true,
-    },
-  ],
-};
+import { services } from '@/data/mockServices';
 
 export const FeaturedServices = () => {
   const [activeTab, setActiveTab] = useState<'hotels' | 'airbnb'>('hotels');
-  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   
-  // Filter services by location if a location is selected
-  const filteredServices = selectedLocation 
-    ? FEATURED_SERVICES[activeTab].filter(service => 
-        service.location.includes(selectedLocation)
+  // Map services to match ServiceCard props format
+  const mappedServices = {
+    hotels: services
+      .filter(service => service.type === 'hotel')
+      .map(service => ({
+        id: service.id,
+        type: service.type,
+        title: service.name,
+        location: service.location,
+        province: service.province,
+        district: service.district,
+        image: service.images[0],
+        rating: service.rating,
+        pricePerNight: service.price,
+        rooms: service.rooms,
+        beds: service.beds,
+        bathrooms: service.bathrooms,
+        acceptsPets: service.acceptsPets,
+      })).slice(0, 3),
+    airbnb: services
+      .filter(service => service.type === 'airbnb')
+      .map(service => ({
+        id: service.id,
+        type: service.type,
+        title: service.name,
+        location: service.location,
+        province: service.province,
+        district: service.district,
+        image: service.images[0],
+        rating: service.rating,
+        pricePerNight: service.price,
+        rooms: service.rooms,
+        beds: service.beds,
+        bathrooms: service.bathrooms,
+        acceptsPets: service.acceptsPets,
+      })).slice(0, 3),
+  };
+  
+  // Filter services by province if selected
+  const filteredServices = selectedProvince 
+    ? mappedServices[activeTab].filter(service => 
+        service.province === selectedProvince
       )
-    : FEATURED_SERVICES[activeTab];
+    : mappedServices[activeTab];
   
-  // Get unique locations from the current active tab
-  const locations = [...new Set(FEATURED_SERVICES[activeTab].map(service => 
-    service.location.split(',')[0].trim()
-  ))];
+  // Get unique provinces from all services
+  const provinces = [...new Set(services.map(service => service.province))];
   
   return (
     <section id="services" className="section-spacing bg-gray-50">
@@ -128,7 +79,7 @@ export const FeaturedServices = () => {
               <button
                 onClick={() => {
                   setActiveTab('hotels');
-                  setSelectedLocation(null);
+                  setSelectedProvince(null);
                 }}
                 className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
                   activeTab === 'hotels'
@@ -141,7 +92,7 @@ export const FeaturedServices = () => {
               <button
                 onClick={() => {
                   setActiveTab('airbnb');
-                  setSelectedLocation(null);
+                  setSelectedProvince(null);
                 }}
                 className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
                   activeTab === 'airbnb'
@@ -153,31 +104,31 @@ export const FeaturedServices = () => {
               </button>
             </div>
             
-            {/* Location filter */}
+            {/* Province filter */}
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setSelectedLocation(null)}
+                onClick={() => setSelectedProvince(null)}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                  selectedLocation === null
+                  selectedProvince === null
                     ? 'bg-rwandan-blue text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                All Locations
+                All Provinces
               </button>
               
-              {locations.map(location => (
+              {provinces.map(province => (
                 <button
-                  key={location}
-                  onClick={() => setSelectedLocation(location)}
+                  key={province}
+                  onClick={() => setSelectedProvince(province)}
                   className={`px-3 py-1 rounded-full text-xs font-medium transition-all flex items-center ${
-                    selectedLocation === location
+                    selectedProvince === province
                       ? 'bg-rwandan-blue text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
                   <MapPin className="h-3 w-3 mr-1" />
-                  {location}
+                  {province}
                 </button>
               ))}
             </div>
@@ -195,12 +146,12 @@ export const FeaturedServices = () => {
           
           {filteredServices.length === 0 && (
             <div className="col-span-3 text-center py-12">
-              <p className="text-gray-500">No accommodations found in this location.</p>
+              <p className="text-gray-500">No accommodations found in this province.</p>
               <button 
-                onClick={() => setSelectedLocation(null)}
+                onClick={() => setSelectedProvince(null)}
                 className="mt-4 text-rwandan-blue hover:underline"
               >
-                View all locations
+                View all provinces
               </button>
             </div>
           )}

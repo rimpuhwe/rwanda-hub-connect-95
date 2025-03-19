@@ -4,6 +4,8 @@ export interface Service {
   type: 'hotel' | 'airbnb';
   name: string;
   location: string;
+  province: string;
+  district: string;
   price: number;
   currency: string;
   rating: number;
@@ -24,6 +26,8 @@ export const services: Service[] = [
     type: "hotel",
     name: "Kigali Marriott Hotel",
     location: "Kigali City Center",
+    province: "Kigali City",
+    district: "Nyarugenge",
     price: 150,
     currency: "USD",
     rating: 4.8,
@@ -48,6 +52,8 @@ export const services: Service[] = [
     type: "hotel",
     name: "Serena Hotel Rwanda",
     location: "Kiyovu, Kigali",
+    province: "Kigali City",
+    district: "Kicukiro",
     price: 200,
     currency: "USD",
     rating: 4.9,
@@ -72,6 +78,8 @@ export const services: Service[] = [
     type: "hotel",
     name: "The Retreat by Heaven",
     location: "Kiyovu, Kigali",
+    province: "Kigali City",
+    district: "Gasabo",
     price: 280,
     currency: "USD",
     rating: 4.7,
@@ -96,6 +104,8 @@ export const services: Service[] = [
     type: "airbnb",
     name: "Modern Lake Kivu Villa",
     location: "Rubavu, Lake Kivu",
+    province: "Western Province",
+    district: "Rubavu",
     price: 120,
     currency: "USD",
     rating: 4.9,
@@ -120,6 +130,8 @@ export const services: Service[] = [
     type: "airbnb",
     name: "Cozy Musanze Cottage",
     location: "Musanze, Northern Province",
+    province: "Northern Province",
+    district: "Musanze",
     price: 85,
     currency: "USD",
     rating: 4.7,
@@ -144,6 +156,8 @@ export const services: Service[] = [
     type: "airbnb",
     name: "Luxury Apartment in Kigali",
     location: "Nyarutarama, Kigali",
+    province: "Kigali City",
+    district: "Gasabo",
     price: 95,
     currency: "USD",
     rating: 4.8,
@@ -172,4 +186,41 @@ export const getServiceById = (id: string): Service | undefined => {
 export const getServicesByType = (type?: string): Service[] => {
   if (!type || type === 'all') return services;
   return services.filter(service => service.type === type);
+};
+
+// Helper function to get all provinces
+export const getProvinces = (): string[] => {
+  const provinces = [...new Set(services.map(service => service.province))];
+  return provinces.sort();
+};
+
+// Helper function to get districts within a province
+export const getDistrictsByProvince = (province: string): string[] => {
+  const districts = [...new Set(
+    services
+      .filter(service => service.province === province)
+      .map(service => service.district)
+  )];
+  return districts.sort();
+};
+
+// Helper function to filter services by province and/or district
+export const filterServicesByLocation = (
+  services: Service[],
+  province?: string,
+  district?: string
+): Service[] => {
+  if (!province && !district) return services;
+  
+  let filtered = services;
+  
+  if (province) {
+    filtered = filtered.filter(service => service.province === province);
+  }
+  
+  if (district) {
+    filtered = filtered.filter(service => service.district === district);
+  }
+  
+  return filtered;
 };

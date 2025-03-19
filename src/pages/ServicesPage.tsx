@@ -13,9 +13,15 @@ import { Slider } from '@/components/ui/slider';
 import { Calendar } from '@/components/ui/calendar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getServicesByType, Service } from '@/data/mockServices';
+import { 
+  getServicesByType, 
+  getProvinces, 
+  getDistrictsByProvince, 
+  filterServicesByLocation, 
+  Service 
+} from '@/data/mockServices';
 import { format } from 'date-fns';
-import { MapPin, Star, Search, Filter, Calendar as CalendarIcon, Wifi, Utensils, Tv, Car, Check, Heart, Users, Bed, Bath, PawPrint } from 'lucide-react';
+import { MapPin, Star, Search, Filter, Calendar as CalendarIcon, Wifi, Utensils, Tv, Car, Heart, Users, Bed, Bath, PawPrint } from 'lucide-react';
 import { toast } from "sonner";
 
 const ServicesPage = () => {
@@ -30,23 +36,44 @@ const ServicesPage = () => {
     to?: Date;
   } | undefined>(undefined);
   const [guests, setGuests] = useState(2);
-  const [location, setLocation] = useState<string>('all');
+  const [province, setProvince] = useState<string>('all');
+  const [district, setDistrict] = useState<string>('all');
+  const [availableDistricts, setAvailableDistricts] = useState<string[]>([]);
   const [amenities, setAmenities] = useState<string[]>([]);
   const [propertyType, setPropertyType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('recommended');
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   
-  // New room options state
+  // Room options state
   const [rooms, setRooms] = useState(1);
   const [beds, setBeds] = useState(1);
   const [bathrooms, setBathrooms] = useState(1);
   const [acceptsPets, setAcceptsPets] = useState(false);
+
+  // Get provinces for filter
+  const provinces = getProvinces();
 
   useEffect(() => {
     const allServices = getServicesByType(activeTab === 'all' ? undefined : activeTab);
     setServices(allServices);
     setFilteredServices(allServices);
   }, [activeTab]);
+
+  // Update available districts when province changes
+  useEffect(() => {
+    if (province !== 'all') {
+      const districts = getDistrictsByProvince(province);
+      setAvailableDistricts(districts);
+
+      // Reset district if the current one is not in the new province
+      if (district !== 'all' && !districts.includes(district)) {
+        setDistrict('all');
+      }
+    } else {
+      setAvailableDistricts([]);
+      setDistrict('all');
+    }
+  }, [province, district]);
 
   useEffect(() => {
     let filtered = [...services];
@@ -66,9 +93,13 @@ const ServicesPage = () => {
       service => service.price >= priceRange[0] && service.price <= priceRange[1]
     );
     
-    // Filter by location - this is now a primary filter
-    if (location !== 'all') {
-      filtered = filtered.filter(service => service.location.includes(location));
+    // Filter by province and district
+    if (province !== 'all' || district !== 'all') {
+      filtered = filterServicesByLocation(
+        filtered, 
+        province === 'all' ? undefined : province,
+        district === 'all' ? undefined : district
+      );
     }
     
     // Filter by amenities
@@ -85,6 +116,31 @@ const ServicesPage = () => {
       filtered = filtered.filter(service => service.type === propertyType);
     }
     
+    // Filter by room options
+    if (rooms > 1) {
+      filtered = filtered.filter(
+        service => service.rooms !== undefined && service.rooms >= rooms
+      );
+    }
+    
+    if (beds > 1) {
+      filtered = filtered.filter(
+        service => service.beds !== undefined && service.beds >= beds
+      );
+    }
+    
+    if (bathrooms > 1) {
+      filtered = filtered.filter(
+        service => service.bathrooms !== undefined && service.bathrooms >= bathrooms
+      );
+    }
+    
+    if (acceptsPets) {
+      filtered = filtered.filter(
+        service => service.acceptsPets === true
+      );
+    }
+    
     // Sort results
     if (sortBy === 'price-low') {
       filtered.sort((a, b) => a.price - b.price);
@@ -95,7 +151,10 @@ const ServicesPage = () => {
     }
     
     setFilteredServices(filtered);
-  }, [searchQuery, priceRange, location, amenities, propertyType, sortBy, services]);
+  }, [
+    searchQuery, priceRange, province, district, amenities, 
+    propertyType, sortBy, services, rooms, beds, bathrooms, acceptsPets
+  ]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -103,11 +162,12 @@ const ServicesPage = () => {
     setPriceRange([0, 500]);
     setDateRange(undefined);
     setGuests(2);
-    setLocation('all');
+    setProvince('all');
+    setDistrict('all');
     setAmenities([]);
     setPropertyType('all');
     setSortBy('recommended');
-    // Reset the new room options
+    // Reset the room options
     setRooms(1);
     setBeds(1);
     setBathrooms(1);
@@ -126,18 +186,17 @@ const ServicesPage = () => {
     setPriceRange([0, 500]);
     setDateRange(undefined);
     setGuests(2);
-    setLocation('all');
+    setProvince('all');
+    setDistrict('all');
     setAmenities([]);
     setPropertyType('all');
     setSortBy('recommended');
-    // Reset the new room options
+    // Reset the room options
     setRooms(1);
     setBeds(1);
     setBathrooms(1);
     setAcceptsPets(false);
   };
-
-  const availableLocations = ['Kigali', 'Musanze', 'Nyungwe', 'Akagera', 'Rubavu', 'Karongi'];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -206,15 +265,34 @@ const ServicesPage = () => {
                 </div>
                 
                 <div>
-                  <Select value={location} onValueChange={setLocation}>
+                  <Select value={province} onValueChange={setProvince}>
                     <SelectTrigger>
                       <MapPin className="mr-2 h-4 w-4" />
-                      <SelectValue placeholder="Select location" />
+                      <SelectValue placeholder="Select province" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Locations</SelectItem>
-                      {availableLocations.map(loc => (
-                        <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                      <SelectItem value="all">All Provinces</SelectItem>
+                      {provinces.map(p => (
+                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Select 
+                    value={district} 
+                    onValueChange={setDistrict}
+                    disabled={province === 'all' || availableDistricts.length === 0}
+                  >
+                    <SelectTrigger>
+                      <MapPin className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Select district" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Districts</SelectItem>
+                      {availableDistricts.map(d => (
+                        <SelectItem key={d} value={d}>{d} District</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -454,10 +532,17 @@ const ServicesPage = () => {
               </div>
             ) : null}
             
-            {location !== 'all' && (
+            {province !== 'all' && (
               <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
-                <span>Location: {location}</span>
-                <button className="ml-2" onClick={() => setLocation('all')}>×</button>
+                <span>Province: {province}</span>
+                <button className="ml-2" onClick={() => setProvince('all')}>×</button>
+              </div>
+            )}
+            
+            {district !== 'all' && (
+              <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
+                <span>District: {district}</span>
+                <button className="ml-2" onClick={() => setDistrict('all')}>×</button>
               </div>
             )}
             
@@ -496,8 +581,9 @@ const ServicesPage = () => {
               </div>
             ))}
             
-            {(priceRange[0] > 0 || priceRange[1] < 500 || location !== 'all' || amenities.length > 0 || 
-              propertyType !== 'all' || rooms > 1 || beds > 1 || bathrooms > 1 || acceptsPets) && (
+            {(priceRange[0] > 0 || priceRange[1] < 500 || province !== 'all' || district !== 'all' || 
+              amenities.length > 0 || propertyType !== 'all' || rooms > 1 || beds > 1 || 
+              bathrooms > 1 || acceptsPets) && (
               <Button variant="outline" size="sm" onClick={resetFilters}>
                 Clear All Filters
               </Button>
@@ -644,7 +730,14 @@ const ServiceGrid = ({
               
               <div className="flex items-center text-gray-500 mb-2">
                 <MapPin className="h-4 w-4 mr-1" />
-                <span className="text-sm">{service.location}</span>
+                <span className="text-sm">
+                  {service.location}
+                  {service.district && (
+                    <span className="font-medium ml-1">
+                      ({service.district} District)
+                    </span>
+                  )}
+                </span>
               </div>
               
               <div className="flex items-center mb-3">
@@ -656,22 +749,22 @@ const ServiceGrid = ({
               </div>
               
               <div className="flex flex-wrap gap-2 mb-3">
-                {rooms > 1 && (
+                {rooms > 1 && service.rooms && service.rooms >= rooms && (
                   <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
-                    <Bed className="h-3 w-3 mr-1" /> {rooms} Room{rooms > 1 ? 's' : ''}
+                    <Bed className="h-3 w-3 mr-1" /> {service.rooms} Room{service.rooms > 1 ? 's' : ''}
                   </span>
                 )}
-                {beds > 1 && (
+                {beds > 1 && service.beds && service.beds >= beds && (
                   <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
-                    <Bed className="h-3 w-3 mr-1" /> {beds} Bed{beds > 1 ? 's' : ''}
+                    <Bed className="h-3 w-3 mr-1" /> {service.beds} Bed{service.beds > 1 ? 's' : ''}
                   </span>
                 )}
-                {bathrooms > 1 && (
+                {bathrooms > 1 && service.bathrooms && service.bathrooms >= bathrooms && (
                   <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
-                    <Bath className="h-3 w-3 mr-1" /> {bathrooms} Bath{bathrooms > 1 ? 's' : ''}
+                    <Bath className="h-3 w-3 mr-1" /> {service.bathrooms} Bath{service.bathrooms > 1 ? 's' : ''}
                   </span>
                 )}
-                {acceptsPets && (
+                {acceptsPets && service.acceptsPets && (
                   <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full flex items-center">
                     <PawPrint className="h-3 w-3 mr-1" /> Pet-friendly
                   </span>
