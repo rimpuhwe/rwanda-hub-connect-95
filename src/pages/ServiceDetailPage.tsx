@@ -10,11 +10,12 @@ import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MessagingSystem } from '@/components/messaging/MessagingSystem';
 import { 
   ArrowLeft, MapPin, Wifi, Check, X, UtilityPole, ChevronLeft, ChevronRight, 
-  Star, Calendar as CalendarIcon, MessageSquare, Heart, HeartOff, Share2, Shield, CreditCard 
+  Star, Calendar as CalendarIcon, MessageSquare, Heart, HeartOff, Share2, Shield, CreditCard, User 
 } from 'lucide-react';
 import { getServiceById } from '@/data/mockServices';
 import { format } from 'date-fns';
