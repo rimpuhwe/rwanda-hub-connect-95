@@ -15,7 +15,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getServicesByType, Service } from '@/data/mockServices';
 import { format } from 'date-fns';
-import { MapPin, Star, Search, Filter, Calendar as CalendarIcon, Wifi, Utensils, Tv, Car, Check } from 'lucide-react';
+import { MapPin, Star, Search, Filter, Calendar as CalendarIcon, Wifi, Utensils, Tv, Car, Check, Heart } from 'lucide-react';
+import { toast } from "sonner";
 
 const ServicesPage = () => {
   const { type } = useParams();
@@ -417,7 +418,10 @@ const ServiceGrid = ({ services }: { services: Service[] }) => {
     
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) {
-      toast.error('Please log in to save favorites');
+      toast("Please log in to save favorites", {
+        description: "Create an account or sign in to save your favorite listings",
+        duration: 3000,
+      });
       return;
     }
     
@@ -430,12 +434,16 @@ const ServiceGrid = ({ services }: { services: Service[] }) => {
       // Remove from favorites
       userData.savedListings = userData.savedListings.filter((id: string) => id !== serviceId);
       setFavorites(prev => prev.filter(id => id !== serviceId));
-      toast.success('Removed from favorites');
+      toast("Removed from favorites", {
+        description: "The listing has been removed from your saved properties",
+      });
     } else {
       // Add to favorites
       userData.savedListings.push(serviceId);
       setFavorites(prev => [...prev, serviceId]);
-      toast.success('Added to favorites');
+      toast("Added to favorites", {
+        description: "The listing has been saved to your profile",
+      });
     }
     
     localStorage.setItem('currentUser', JSON.stringify(userData));
@@ -475,7 +483,7 @@ const ServiceGrid = ({ services }: { services: Service[] }) => {
             <CardContent className="p-5">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-display font-semibold text-xl">{service.name}</h3>
-                <span className="bg-rwandan-green text-white text-xs px-2 py-1 rounded-full capitalize">
+                <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full capitalize">
                   {service.type}
                 </span>
               </div>
@@ -496,7 +504,7 @@ const ServiceGrid = ({ services }: { services: Service[] }) => {
               <p className="text-gray-600 mb-4 line-clamp-2">{service.description}</p>
               
               <div className="flex justify-between items-center">
-                <div className="font-bold text-rwandan-blue">
+                <div className="font-bold text-blue-600">
                   {service.currency} {service.price}
                   <span className="text-gray-500 font-normal text-sm">/night</span>
                 </div>
