@@ -12,6 +12,10 @@ export interface Service {
   amenities: string[];
   images: string[];
   availableDates?: { from: string; to: string }[];
+  rooms?: number;
+  beds?: number;
+  bathrooms?: number;
+  acceptsPets?: boolean;
 }
 
 export const services: Service[] = [
@@ -33,7 +37,11 @@ export const services: Service[] = [
     ],
     availableDates: [
       { from: "2023-06-01", to: "2023-12-31" }
-    ]
+    ],
+    rooms: 2,
+    beds: 1,
+    bathrooms: 1,
+    acceptsPets: false
   },
   {
     id: "hotel-2",
@@ -53,7 +61,11 @@ export const services: Service[] = [
     ],
     availableDates: [
       { from: "2023-06-01", to: "2023-12-31" }
-    ]
+    ],
+    rooms: 1,
+    beds: 2,
+    bathrooms: 1,
+    acceptsPets: false
   },
   {
     id: "hotel-3",
@@ -73,7 +85,11 @@ export const services: Service[] = [
     ],
     availableDates: [
       { from: "2023-06-01", to: "2023-12-31" }
-    ]
+    ],
+    rooms: 2,
+    beds: 2,
+    bathrooms: 2,
+    acceptsPets: true
   },
   {
     id: "airbnb-1",
@@ -93,7 +109,11 @@ export const services: Service[] = [
     ],
     availableDates: [
       { from: "2023-06-01", to: "2023-12-31" }
-    ]
+    ],
+    rooms: 3,
+    beds: 2,
+    bathrooms: 2,
+    acceptsPets: true
   },
   {
     id: "airbnb-2",
@@ -113,7 +133,11 @@ export const services: Service[] = [
     ],
     availableDates: [
       { from: "2023-06-01", to: "2023-12-31" }
-    ]
+    ],
+    rooms: 2,
+    beds: 1,
+    bathrooms: 1,
+    acceptsPets: false
   },
   {
     id: "airbnb-3",
@@ -133,7 +157,11 @@ export const services: Service[] = [
     ],
     availableDates: [
       { from: "2023-06-01", to: "2023-12-31" }
-    ]
+    ],
+    rooms: 1,
+    beds: 1,
+    bathrooms: 1,
+    acceptsPets: true
   }
 ];
 

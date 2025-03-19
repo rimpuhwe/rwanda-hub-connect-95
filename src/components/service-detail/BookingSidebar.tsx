@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Star, MessageSquare } from 'lucide-react';
+import { CalendarIcon, Star, MessageSquare, Users, Bed, Bath, PawPrint } from 'lucide-react';
 import { format } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface BookingSidebarProps {
   service: any;
@@ -33,6 +34,12 @@ export const BookingSidebar = ({
   onBookingClick,
   onContactHostClick
 }: BookingSidebarProps) => {
+  const [rooms, setRooms] = useState(1);
+  const [beds, setBeds] = useState(1);
+  const [bathrooms, setBathrooms] = useState(1);
+  const [acceptsPets, setAcceptsPets] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('guests');
+
   const calculateTotal = () => {
     if (!dateRange.to) return service.price;
     
@@ -47,6 +54,33 @@ export const BookingSidebar = ({
 
   const increaseGuests = () => {
     setGuests(Math.min(10, guests + 1));
+  };
+
+  // Helper functions for room options
+  const decreaseRooms = () => {
+    setRooms(Math.max(1, rooms - 1));
+  };
+
+  const increaseRooms = () => {
+    setRooms(Math.min(5, rooms + 1));
+  };
+
+  // Helper functions for bed options
+  const decreaseBeds = () => {
+    setBeds(Math.max(1, beds - 1));
+  };
+
+  const increaseBeds = () => {
+    setBeds(Math.min(4, beds + 1));
+  };
+
+  // Helper functions for bathroom options
+  const decreaseBathrooms = () => {
+    setBathrooms(Math.max(1, bathrooms - 1));
+  };
+
+  const increaseBathrooms = () => {
+    setBathrooms(Math.min(3, bathrooms + 1));
   };
 
   return (
@@ -100,22 +134,111 @@ export const BookingSidebar = ({
         </div>
         
         <div className="mb-6">
-          <p className="font-medium mb-2">Number of guests</p>
-          <div className="flex border rounded">
-            <button 
-              className="px-4 py-2 border-r" 
-              onClick={decreaseGuests}
-            >
-              -
-            </button>
-            <div className="flex-grow text-center py-2">{guests}</div>
-            <button 
-              className="px-4 py-2 border-l"
-              onClick={increaseGuests}
-            >
-              +
-            </button>
-          </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-2 mb-4">
+              <TabsTrigger value="guests">
+                <Users className="h-4 w-4 mr-2" />
+                Guests
+              </TabsTrigger>
+              <TabsTrigger value="rooms">
+                <Bed className="h-4 w-4 mr-2" />
+                Room Options
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="guests" className="mt-0">
+              <div className="space-y-4">
+                <p className="font-medium mb-2">Number of guests</p>
+                <div className="flex border rounded">
+                  <button 
+                    className="px-4 py-2 border-r" 
+                    onClick={decreaseGuests}
+                  >
+                    -
+                  </button>
+                  <div className="flex-grow text-center py-2">{guests}</div>
+                  <button 
+                    className="px-4 py-2 border-l"
+                    onClick={increaseGuests}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="rooms" className="mt-0 space-y-4">
+              <div>
+                <p className="font-medium mb-2">Number of rooms</p>
+                <div className="flex border rounded">
+                  <button 
+                    className="px-4 py-2 border-r" 
+                    onClick={decreaseRooms}
+                  >
+                    -
+                  </button>
+                  <div className="flex-grow text-center py-2">{rooms}</div>
+                  <button 
+                    className="px-4 py-2 border-l"
+                    onClick={increaseRooms}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <p className="font-medium mb-2">Beds per room</p>
+                <div className="flex border rounded">
+                  <button 
+                    className="px-4 py-2 border-r" 
+                    onClick={decreaseBeds}
+                  >
+                    -
+                  </button>
+                  <div className="flex-grow text-center py-2">{beds}</div>
+                  <button 
+                    className="px-4 py-2 border-l"
+                    onClick={increaseBeds}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <p className="font-medium mb-2">Number of bathrooms</p>
+                <div className="flex border rounded">
+                  <button 
+                    className="px-4 py-2 border-r" 
+                    onClick={decreaseBathrooms}
+                  >
+                    -
+                  </button>
+                  <div className="flex-grow text-center py-2">{bathrooms}</div>
+                  <button 
+                    className="px-4 py-2 border-l"
+                    onClick={increaseBathrooms}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acceptsPets}
+                    onChange={() => setAcceptsPets(!acceptsPets)}
+                    className="mr-2"
+                  />
+                  <PawPrint className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Pet-friendly</span>
+                </label>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
         
         <div className="mb-4">

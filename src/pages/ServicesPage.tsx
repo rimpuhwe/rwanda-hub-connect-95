@@ -15,7 +15,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getServicesByType, Service } from '@/data/mockServices';
 import { format } from 'date-fns';
-import { MapPin, Star, Search, Filter, Calendar as CalendarIcon, Wifi, Utensils, Tv, Car, Check, Heart } from 'lucide-react';
+import { MapPin, Star, Search, Filter, Calendar as CalendarIcon, Wifi, Utensils, Tv, Car, Check, Heart, Users, Bed, Bath, PawPrint } from 'lucide-react';
 import { toast } from "sonner";
 
 const ServicesPage = () => {
@@ -35,6 +35,12 @@ const ServicesPage = () => {
   const [propertyType, setPropertyType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('recommended');
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  
+  // New room options state
+  const [rooms, setRooms] = useState(1);
+  const [beds, setBeds] = useState(1);
+  const [bathrooms, setBathrooms] = useState(1);
+  const [acceptsPets, setAcceptsPets] = useState(false);
 
   useEffect(() => {
     const allServices = getServicesByType(activeTab === 'all' ? undefined : activeTab);
@@ -60,9 +66,9 @@ const ServicesPage = () => {
       service => service.price >= priceRange[0] && service.price <= priceRange[1]
     );
     
-    // Filter by location
+    // Filter by location - this is now a primary filter
     if (location !== 'all') {
-      filtered = filtered.filter(service => service.location === location);
+      filtered = filtered.filter(service => service.location.includes(location));
     }
     
     // Filter by amenities
@@ -101,6 +107,11 @@ const ServicesPage = () => {
     setAmenities([]);
     setPropertyType('all');
     setSortBy('recommended');
+    // Reset the new room options
+    setRooms(1);
+    setBeds(1);
+    setBathrooms(1);
+    setAcceptsPets(false);
   };
 
   const handleAmenityToggle = (amenity: string) => {
@@ -119,6 +130,11 @@ const ServicesPage = () => {
     setAmenities([]);
     setPropertyType('all');
     setSortBy('recommended');
+    // Reset the new room options
+    setRooms(1);
+    setBeds(1);
+    setBathrooms(1);
+    setAcceptsPets(false);
   };
 
   const availableLocations = ['Kigali', 'Musanze', 'Nyungwe', 'Akagera', 'Rubavu', 'Karongi'];
@@ -205,20 +221,20 @@ const ServicesPage = () => {
                 </div>
                 
                 <div>
-                  <div className="flex border rounded">
+                  <div className="flex border rounded bg-white">
                     <span className="px-4 py-2 border-r bg-gray-50 flex items-center">
-                      Guests
+                      <Users className="h-4 w-4 mr-2" /> Guests
                     </span>
                     <button 
                       className="px-4 py-2 border-r" 
-                      onClick={() => setGuests(g => Math.max(1, g - 1))}
+                      onClick={() => setGuests(Math.max(1, guests - 1))}
                     >
                       -
                     </button>
                     <div className="flex-grow text-center py-2">{guests}</div>
                     <button 
                       className="px-4 py-2 border-l"
-                      onClick={() => setGuests(g => Math.min(10, g + 1))}
+                      onClick={() => setGuests(Math.min(10, guests + 1))}
                     >
                       +
                     </button>
@@ -265,6 +281,85 @@ const ServicesPage = () => {
                               <SelectItem value="airbnb">Airbnb</SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+                        
+                        {/* Room options section */}
+                        <div>
+                          <h3 className="font-medium mb-3">Room Options</h3>
+                          
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-sm mb-2">Number of rooms</p>
+                              <div className="flex border rounded">
+                                <button 
+                                  className="px-3 py-1 border-r text-sm" 
+                                  onClick={() => setRooms(Math.max(1, rooms - 1))}
+                                >
+                                  -
+                                </button>
+                                <div className="flex-grow text-center py-1 text-sm">{rooms}</div>
+                                <button 
+                                  className="px-3 py-1 border-l text-sm"
+                                  onClick={() => setRooms(Math.min(5, rooms + 1))}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <p className="text-sm mb-2">Beds per room</p>
+                              <div className="flex border rounded">
+                                <button 
+                                  className="px-3 py-1 border-r text-sm" 
+                                  onClick={() => setBeds(Math.max(1, beds - 1))}
+                                >
+                                  -
+                                </button>
+                                <div className="flex-grow text-center py-1 text-sm">{beds}</div>
+                                <button 
+                                  className="px-3 py-1 border-l text-sm"
+                                  onClick={() => setBeds(Math.min(4, beds + 1))}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <p className="text-sm mb-2">Number of bathrooms</p>
+                              <div className="flex border rounded">
+                                <button 
+                                  className="px-3 py-1 border-r text-sm" 
+                                  onClick={() => setBathrooms(Math.max(1, bathrooms - 1))}
+                                >
+                                  -
+                                </button>
+                                <div className="flex-grow text-center py-1 text-sm">{bathrooms}</div>
+                                <button 
+                                  className="px-3 py-1 border-l text-sm"
+                                  onClick={() => setBathrooms(Math.min(3, bathrooms + 1))}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <label className="flex items-center cursor-pointer">
+                                <Checkbox 
+                                  id="pets" 
+                                  checked={acceptsPets} 
+                                  onCheckedChange={() => setAcceptsPets(!acceptsPets)}
+                                  className="mr-2"
+                                />
+                                <span className="text-sm flex items-center">
+                                  <PawPrint className="h-4 w-4 mr-2" />
+                                  Pet-friendly
+                                </span>
+                              </label>
+                            </div>
+                          </div>
                         </div>
                         
                         <Accordion type="single" collapsible className="w-full">
@@ -366,6 +461,34 @@ const ServicesPage = () => {
               </div>
             )}
             
+            {rooms > 1 && (
+              <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
+                <span>Rooms: {rooms}</span>
+                <button className="ml-2" onClick={() => setRooms(1)}>×</button>
+              </div>
+            )}
+            
+            {beds > 1 && (
+              <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
+                <span>Beds: {beds}</span>
+                <button className="ml-2" onClick={() => setBeds(1)}>×</button>
+              </div>
+            )}
+            
+            {bathrooms > 1 && (
+              <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
+                <span>Bathrooms: {bathrooms}</span>
+                <button className="ml-2" onClick={() => setBathrooms(1)}>×</button>
+              </div>
+            )}
+            
+            {acceptsPets && (
+              <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
+                <span>Pet-friendly</span>
+                <button className="ml-2" onClick={() => setAcceptsPets(false)}>×</button>
+              </div>
+            )}
+            
             {amenities.map((amenity) => (
               <div key={amenity} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
                 <span>Amenity: {amenity}</span>
@@ -373,7 +496,8 @@ const ServicesPage = () => {
               </div>
             ))}
             
-            {(priceRange[0] > 0 || priceRange[1] < 500 || location !== 'all' || amenities.length > 0 || propertyType !== 'all') && (
+            {(priceRange[0] > 0 || priceRange[1] < 500 || location !== 'all' || amenities.length > 0 || 
+              propertyType !== 'all' || rooms > 1 || beds > 1 || bathrooms > 1 || acceptsPets) && (
               <Button variant="outline" size="sm" onClick={resetFilters}>
                 Clear All Filters
               </Button>
@@ -381,15 +505,33 @@ const ServicesPage = () => {
           </div>
 
           <TabsContent value="all" className="mt-0">
-            <ServiceGrid services={filteredServices} />
+            <ServiceGrid 
+              services={filteredServices} 
+              rooms={rooms}
+              beds={beds}
+              bathrooms={bathrooms}
+              acceptsPets={acceptsPets}
+            />
           </TabsContent>
           
           <TabsContent value="hotel" className="mt-0">
-            <ServiceGrid services={filteredServices} />
+            <ServiceGrid 
+              services={filteredServices}
+              rooms={rooms}
+              beds={beds}
+              bathrooms={bathrooms}
+              acceptsPets={acceptsPets}
+            />
           </TabsContent>
           
           <TabsContent value="airbnb" className="mt-0">
-            <ServiceGrid services={filteredServices} />
+            <ServiceGrid 
+              services={filteredServices}
+              rooms={rooms}
+              beds={beds}
+              bathrooms={bathrooms}
+              acceptsPets={acceptsPets}
+            />
           </TabsContent>
         </Tabs>
       </div>
@@ -399,7 +541,19 @@ const ServicesPage = () => {
   );
 };
 
-const ServiceGrid = ({ services }: { services: Service[] }) => {
+const ServiceGrid = ({ 
+  services,
+  rooms = 1,
+  beds = 1,
+  bathrooms = 1,
+  acceptsPets = false
+}: { 
+  services: Service[];
+  rooms?: number;
+  beds?: number;
+  bathrooms?: number;
+  acceptsPets?: boolean;
+}) => {
   const [favorites, setFavorites] = useState<string[]>([]);
   
   useEffect(() => {
@@ -499,6 +653,29 @@ const ServiceGrid = ({ services }: { services: Service[] }) => {
                   <span className="ml-1 font-medium">{service.rating}</span>
                 </div>
                 <span className="text-sm text-gray-500">({service.reviewCount} reviews)</span>
+              </div>
+              
+              <div className="flex flex-wrap gap-2 mb-3">
+                {rooms > 1 && (
+                  <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
+                    <Bed className="h-3 w-3 mr-1" /> {rooms} Room{rooms > 1 ? 's' : ''}
+                  </span>
+                )}
+                {beds > 1 && (
+                  <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
+                    <Bed className="h-3 w-3 mr-1" /> {beds} Bed{beds > 1 ? 's' : ''}
+                  </span>
+                )}
+                {bathrooms > 1 && (
+                  <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
+                    <Bath className="h-3 w-3 mr-1" /> {bathrooms} Bath{bathrooms > 1 ? 's' : ''}
+                  </span>
+                )}
+                {acceptsPets && (
+                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full flex items-center">
+                    <PawPrint className="h-3 w-3 mr-1" /> Pet-friendly
+                  </span>
+                )}
               </div>
               
               <p className="text-gray-600 mb-4 line-clamp-2">{service.description}</p>

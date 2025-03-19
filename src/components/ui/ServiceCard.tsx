@@ -12,6 +12,10 @@ interface ServiceCardProps {
   rating: number;
   pricePerNight: number;
   className?: string;
+  rooms?: number;
+  beds?: number;
+  bathrooms?: number;
+  acceptsPets?: boolean;
 }
 
 export const ServiceCard = ({
@@ -23,6 +27,10 @@ export const ServiceCard = ({
   rating,
   pricePerNight,
   className,
+  rooms = 1,
+  beds = 1,
+  bathrooms = 1,
+  acceptsPets = false,
 }: ServiceCardProps) => {
   return (
     <Link
@@ -60,6 +68,29 @@ export const ServiceCard = ({
         <div className="mt-1 flex items-center text-sm text-gray-600">
           <MapPin className="h-3.5 w-3.5 mr-1" />
           <span className="line-clamp-1">{location}</span>
+        </div>
+
+        <div className="mt-2 flex flex-wrap gap-2">
+          {rooms > 0 && (
+            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
+              {rooms} Room{rooms > 1 ? 's' : ''}
+            </span>
+          )}
+          {beds > 0 && (
+            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
+              {beds} Bed{beds > 1 ? 's' : ''}
+            </span>
+          )}
+          {bathrooms > 0 && (
+            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
+              {bathrooms} Bath{bathrooms > 1 ? 's' : ''}
+            </span>
+          )}
+          {acceptsPets && (
+            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+              Pet-friendly
+            </span>
+          )}
         </div>
         
         <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
