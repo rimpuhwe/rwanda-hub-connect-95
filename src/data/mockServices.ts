@@ -1,3 +1,4 @@
+
 export interface Service {
   id: string;
   type: 'hotel' | 'airbnb';
@@ -588,5 +589,31 @@ export const getProvinces = (): string[] => {
   return provinces.sort();
 };
 
-export
+export const getDistrictsByProvince = (province: string): string[] => {
+  const districts = [...new Set(
+    services
+      .filter(service => service.province === province)
+      .map(service => service.district)
+  )];
+  return districts.sort();
+};
 
+export const filterServicesByLocation = (
+  servicesList: Service[],
+  province: string,
+  district?: string
+): Service[] => {
+  if (!province || province === 'all') return servicesList;
+  
+  const filteredByProvince = servicesList.filter(
+    service => service.province === province
+  );
+  
+  if (district && district !== 'all') {
+    return filteredByProvince.filter(
+      service => service.district === district
+    );
+  }
+  
+  return filteredByProvince;
+};
