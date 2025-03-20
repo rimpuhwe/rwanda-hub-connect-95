@@ -347,7 +347,7 @@ const ServicesPage = () => {
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="w-full justify-start">
                         <Users className="mr-2 h-4 w-4" />
-                        {guests} Guest{guests !== 1 ? 's' : ''} & Options
+                        Guest Preferences
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[340px] p-5" align="start">
