@@ -1,7 +1,18 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, MapPin } from 'lucide-react';
+import { ChevronRight, MapPin, Bed, Bath, PawPrint, Users } from 'lucide-react';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ServiceCard } from '../ui/ServiceCard';
 import { services, getProvinces, filterServicesByLocation } from '@/data/mockServices';
 
@@ -10,6 +21,14 @@ export const FeaturedServices = () => {
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [filteredServices, setFilteredServices] = useState<any[]>([]);
+  
+  // Guest and room options
+  const [guests, setGuests] = useState(2);
+  const [rooms, setRooms] = useState(1);
+  const [beds, setBeds] = useState(1);
+  const [bathrooms, setBathrooms] = useState(1);
+  const [acceptsPets, setAcceptsPets] = useState(false);
+  const [guestsMenuOpen, setGuestsMenuOpen] = useState(false);
   
   useEffect(() => {
     setIsLoading(true);
@@ -23,13 +42,27 @@ export const FeaturedServices = () => {
         allServices = filterServicesByLocation(allServices, selectedProvince);
       }
       
-      // Filter by type (hotel or airbnb)
-      const typeFiltered = allServices.filter(service => 
-        activeTab === 'hotels' ? service.type === 'hotel' : service.type === 'airbnb'
-      );
+      // Filter by type (hotel or airbnb) and include lodges in airbnb results
+      const typeFiltered = allServices.filter(service => {
+        if (activeTab === 'hotels') {
+          return service.type === 'hotel';
+        } else {
+          // For 'airbnb' tab, include both airbnb and lodges (hotels that have 'lodge' in their name)
+          return service.type === 'airbnb' || 
+                 (service.type === 'hotel' && service.name.toLowerCase().includes('lodge'));
+        }
+      });
+      
+      // Apply room filters
+      const roomFiltered = typeFiltered.filter(service => {
+        return (service.rooms >= rooms) && 
+               (service.beds >= beds) && 
+               (service.bathrooms >= bathrooms) && 
+               (!acceptsPets || service.acceptsPets);
+      });
       
       // Map to the format expected by ServiceCard
-      const mappedServices = typeFiltered.map(service => ({
+      const mappedServices = roomFiltered.map(service => ({
         id: service.id,
         type: service.type,
         title: service.name,
@@ -48,9 +81,45 @@ export const FeaturedServices = () => {
       setFilteredServices(mappedServices);
       setIsLoading(false);
     }, 500);
-  }, [activeTab, selectedProvince]);
+  }, [activeTab, selectedProvince, rooms, beds, bathrooms, acceptsPets]);
   
   const provinces = getProvinces();
+  
+  // Helper functions for guest count changes
+  const decreaseGuests = () => {
+    setGuests(Math.max(1, guests - 1));
+  };
+
+  const increaseGuests = () => {
+    setGuests(Math.min(10, guests + 1));
+  };
+
+  // Helper functions for room options
+  const decreaseRooms = () => {
+    setRooms(Math.max(1, rooms - 1));
+  };
+
+  const increaseRooms = () => {
+    setRooms(Math.min(5, rooms + 1));
+  };
+
+  // Helper functions for bed options
+  const decreaseBeds = () => {
+    setBeds(Math.max(1, beds - 1));
+  };
+
+  const increaseBeds = () => {
+    setBeds(Math.min(4, beds + 1));
+  };
+
+  // Helper functions for bathroom options
+  const decreaseBathrooms = () => {
+    setBathrooms(Math.max(1, bathrooms - 1));
+  };
+
+  const increaseBathrooms = () => {
+    setBathrooms(Math.min(3, bathrooms + 1));
+  };
   
   return (
     <section id="services" className="section-spacing bg-gray-50">
@@ -95,7 +164,7 @@ export const FeaturedServices = () => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Airbnb
+                Airbnb & Lodges
               </button>
             </div>
             
@@ -126,6 +195,156 @@ export const FeaturedServices = () => {
                 </button>
               ))}
             </div>
+
+            {/* New Guests Dropdown with Room Options */}
+            <DropdownMenu open={guestsMenuOpen} onOpenChange={setGuestsMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  <span>{guests} Guest{guests !== 1 ? 's' : ''}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-72 p-4 bg-white">
+                <DropdownMenuLabel>Guests & Room Options</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <div className="space-y-4 py-2">
+                    <div>
+                      <p className="text-sm mb-2">Number of guests</p>
+                      <div className="flex border rounded">
+                        <button 
+                          className="px-3 py-1 border-r text-sm" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            decreaseGuests();
+                          }}
+                        >
+                          -
+                        </button>
+                        <div className="flex-grow text-center py-1 text-sm flex items-center justify-center">
+                          <Users className="h-3.5 w-3.5 mr-1.5" />
+                          {guests}
+                        </div>
+                        <button 
+                          className="px-3 py-1 border-l text-sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            increaseGuests();
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-sm mb-2">Number of rooms</p>
+                      <div className="flex border rounded">
+                        <button 
+                          className="px-3 py-1 border-r text-sm" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            decreaseRooms();
+                          }}
+                        >
+                          -
+                        </button>
+                        <div className="flex-grow text-center py-1 text-sm flex items-center justify-center">
+                          <Bed className="h-3.5 w-3.5 mr-1.5" />
+                          {rooms}
+                        </div>
+                        <button 
+                          className="px-3 py-1 border-l text-sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            increaseRooms();
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-sm mb-2">Beds per room</p>
+                      <div className="flex border rounded">
+                        <button 
+                          className="px-3 py-1 border-r text-sm" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            decreaseBeds();
+                          }}
+                        >
+                          -
+                        </button>
+                        <div className="flex-grow text-center py-1 text-sm flex items-center justify-center">
+                          <Bed className="h-3.5 w-3.5 mr-1.5" />
+                          {beds}
+                        </div>
+                        <button 
+                          className="px-3 py-1 border-l text-sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            increaseBeds();
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-sm mb-2">Number of bathrooms</p>
+                      <div className="flex border rounded">
+                        <button 
+                          className="px-3 py-1 border-r text-sm" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            decreaseBathrooms();
+                          }}
+                        >
+                          -
+                        </button>
+                        <div className="flex-grow text-center py-1 text-sm flex items-center justify-center">
+                          <Bath className="h-3.5 w-3.5 mr-1.5" />
+                          {bathrooms}
+                        </div>
+                        <button 
+                          className="px-3 py-1 border-l text-sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            increaseBathrooms();
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      <Checkbox 
+                        id="pet-friendly"
+                        checked={acceptsPets}
+                        onCheckedChange={() => setAcceptsPets(!acceptsPets)}
+                        className="mr-2"
+                      />
+                      <label htmlFor="pet-friendly" className="text-sm flex items-center cursor-pointer">
+                        <PawPrint className="h-3.5 w-3.5 mr-1.5" />
+                        Pet-friendly
+                      </label>
+                    </div>
+                    
+                    <Button 
+                      className="w-full mt-2" 
+                      size="sm"
+                      onClick={() => setGuestsMenuOpen(false)}
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         
@@ -173,7 +392,7 @@ export const FeaturedServices = () => {
             to={`/services/${activeTab}`}
             className="btn-secondary inline-flex items-center"
           >
-            View all {activeTab}
+            View all {activeTab === 'airbnb' ? 'Airbnbs & Lodges' : activeTab}
             <ChevronRight className="h-4 w-4 ml-1" />
           </Link>
         </div>

@@ -103,7 +103,7 @@ export const ServiceCard = ({
             {vicinity || location}
             {district && (
               <span className="font-medium ml-1">
-                ({district} District)
+                {district}
               </span>
             )}
           </span>

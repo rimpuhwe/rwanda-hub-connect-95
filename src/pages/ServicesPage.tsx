@@ -8,6 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Slider } from '@/components/ui/slider';
 import { Calendar } from '@/components/ui/calendar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -38,6 +47,7 @@ const ServicesPage = () => {
     to?: Date;
   } | undefined>(undefined);
   const [guests, setGuests] = useState(2);
+  const [guestsMenuOpen, setGuestsMenuOpen] = useState(false);
   const [province, setProvince] = useState<string>('all');
   const [district, setDistrict] = useState<string>('all');
   const [availableDistricts, setAvailableDistricts] = useState<string[]>([]);
@@ -86,16 +96,11 @@ const ServicesPage = () => {
       }
     };
     
-    fetchGooglePlaces();
+    // Just use mock data directly instead of trying to fetch from Google Places
+    const mockData = getServicesByType(activeTab === 'all' ? undefined : activeTab);
+    setServices(mockData);
+    setIsLoading(false);
   }, [activeTab, province, district]);
-
-  // Fall back to mock data if Google API fails
-  useEffect(() => {
-    if (googleServices.length === 0 && !isLoading) {
-      const allServices = getServicesByType(activeTab === 'all' ? undefined : activeTab);
-      setServices(allServices);
-    }
-  }, [activeTab, googleServices, isLoading]);
 
   // Update available districts when province changes
   useEffect(() => {
@@ -113,16 +118,26 @@ const ServicesPage = () => {
     }
   }, [province, district]);
 
-  // Apply filters to the services (Google API or fallback mock data)
+  // Apply filters to the services
   useEffect(() => {
     // Use Google services if available, otherwise fall back to mock data
-    let filtered = googleServices.length > 0 ? [...googleServices] : [...services];
+    let filtered = services.length > 0 ? [...services] : [...services];
+    
+    // If airbnb is selected, include lodges
+    if (activeTab === 'airbnb') {
+      filtered = filtered.filter(service => 
+        service.type === 'airbnb' || 
+        (service.type === 'hotel' && service.name.toLowerCase().includes('lodge'))
+      );
+    } else if (activeTab !== 'all') {
+      filtered = filtered.filter(service => service.type === activeTab);
+    }
     
     // Filter by search query
     if (searchQuery) {
       filtered = filtered.filter(
         service => 
-          service.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          service.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           service.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           service.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -130,8 +145,13 @@ const ServicesPage = () => {
     
     // Filter by price range
     filtered = filtered.filter(
-      service => service.pricePerNight >= priceRange[0] && service.pricePerNight <= priceRange[1]
+      service => service.price >= priceRange[0] && service.price <= priceRange[1]
     );
+    
+    // Filter by province and district
+    if (province !== 'all') {
+      filtered = filterServicesByLocation(filtered, province, district !== 'all' ? district : undefined);
+    }
     
     // Filter by amenities
     if (amenities.length > 0) {
@@ -174,18 +194,34 @@ const ServicesPage = () => {
     
     // Sort results
     if (sortBy === 'price-low') {
-      filtered.sort((a, b) => a.pricePerNight - b.pricePerNight);
+      filtered.sort((a, b) => a.price - b.price);
     } else if (sortBy === 'price-high') {
-      filtered.sort((a, b) => b.pricePerNight - a.pricePerNight);
+      filtered.sort((a, b) => b.price - a.price);
     } else if (sortBy === 'rating') {
       filtered.sort((a, b) => b.rating - a.rating);
     }
     
-    setFilteredServices(filtered);
+    // Format for service cards
+    const mappedServices = filtered.map(service => ({
+      id: service.id,
+      type: service.type,
+      title: service.name,
+      location: service.location,
+      province: service.province,
+      district: service.district,
+      image: service.images?.length > 0 ? service.images[0] : '',
+      rating: service.rating,
+      pricePerNight: service.price,
+      rooms: service.rooms || 1,
+      beds: service.beds || 1,
+      bathrooms: service.bathrooms || 1,
+      acceptsPets: service.acceptsPets || false,
+    }));
+    
+    setFilteredServices(mappedServices);
   }, [
     searchQuery, priceRange, province, district, amenities, 
-    propertyType, sortBy, services, rooms, beds, bathrooms, acceptsPets,
-    googleServices
+    propertyType, sortBy, services, rooms, beds, bathrooms, acceptsPets, activeTab
   ]);
 
   const handleTabChange = (value: string) => {
@@ -230,6 +266,42 @@ const ServicesPage = () => {
     setAcceptsPets(false);
   };
 
+  // Helper functions for guest count changes
+  const decreaseGuests = () => {
+    setGuests(Math.max(1, guests - 1));
+  };
+
+  const increaseGuests = () => {
+    setGuests(Math.min(10, guests + 1));
+  };
+
+  // Helper functions for room options
+  const decreaseRooms = () => {
+    setRooms(Math.max(1, rooms - 1));
+  };
+
+  const increaseRooms = () => {
+    setRooms(Math.min(5, rooms + 1));
+  };
+
+  // Helper functions for bed options
+  const decreaseBeds = () => {
+    setBeds(Math.max(1, beds - 1));
+  };
+
+  const increaseBeds = () => {
+    setBeds(Math.min(4, beds + 1));
+  };
+
+  // Helper functions for bathroom options
+  const decreaseBathrooms = () => {
+    setBathrooms(Math.max(1, bathrooms - 1));
+  };
+
+  const increaseBathrooms = () => {
+    setBathrooms(Math.min(3, bathrooms + 1));
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -247,7 +319,7 @@ const ServicesPage = () => {
             <TabsList className="bg-gray-100">
               <TabsTrigger value="all">All Accommodations</TabsTrigger>
               <TabsTrigger value="hotel">Hotels</TabsTrigger>
-              <TabsTrigger value="airbnb">Airbnbs</TabsTrigger>
+              <TabsTrigger value="airbnb">Airbnbs & Lodges</TabsTrigger>
             </TabsList>
           </div>
           
@@ -330,25 +402,156 @@ const ServicesPage = () => {
                   </Select>
                 </div>
                 
+                {/* Enhanced Guests Dropdown with Room Options */}
                 <div>
-                  <div className="flex border rounded bg-white">
-                    <span className="px-4 py-2 border-r bg-gray-50 flex items-center">
-                      <Users className="h-4 w-4 mr-2" /> Guests
-                    </span>
-                    <button 
-                      className="px-4 py-2 border-r" 
-                      onClick={() => setGuests(Math.max(1, guests - 1))}
-                    >
-                      -
-                    </button>
-                    <div className="flex-grow text-center py-2">{guests}</div>
-                    <button 
-                      className="px-4 py-2 border-l"
-                      onClick={() => setGuests(Math.min(10, guests + 1))}
-                    >
-                      +
-                    </button>
-                  </div>
+                  <DropdownMenu open={guestsMenuOpen} onOpenChange={setGuestsMenuOpen}>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Users className="mr-2 h-4 w-4" />
+                        {guests} Guest{guests !== 1 ? 's' : ''} & Options
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-72 p-4 bg-white">
+                      <DropdownMenuLabel>Guests & Room Options</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuGroup>
+                        <div className="space-y-4 py-2">
+                          <div>
+                            <p className="text-sm mb-2">Number of guests</p>
+                            <div className="flex border rounded">
+                              <button 
+                                className="px-3 py-1 border-r text-sm" 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  decreaseGuests();
+                                }}
+                              >
+                                -
+                              </button>
+                              <div className="flex-grow text-center py-1 text-sm flex items-center justify-center">
+                                <Users className="h-3.5 w-3.5 mr-1.5" />
+                                {guests}
+                              </div>
+                              <button 
+                                className="px-3 py-1 border-l text-sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  increaseGuests();
+                                }}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="text-sm mb-2">Number of rooms</p>
+                            <div className="flex border rounded">
+                              <button 
+                                className="px-3 py-1 border-r text-sm" 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  decreaseRooms();
+                                }}
+                              >
+                                -
+                              </button>
+                              <div className="flex-grow text-center py-1 text-sm flex items-center justify-center">
+                                <Bed className="h-3.5 w-3.5 mr-1.5" />
+                                {rooms}
+                              </div>
+                              <button 
+                                className="px-3 py-1 border-l text-sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  increaseRooms();
+                                }}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="text-sm mb-2">Beds per room</p>
+                            <div className="flex border rounded">
+                              <button 
+                                className="px-3 py-1 border-r text-sm" 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  decreaseBeds();
+                                }}
+                              >
+                                -
+                              </button>
+                              <div className="flex-grow text-center py-1 text-sm flex items-center justify-center">
+                                <Bed className="h-3.5 w-3.5 mr-1.5" />
+                                {beds}
+                              </div>
+                              <button 
+                                className="px-3 py-1 border-l text-sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  increaseBeds();
+                                }}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="text-sm mb-2">Number of bathrooms</p>
+                            <div className="flex border rounded">
+                              <button 
+                                className="px-3 py-1 border-r text-sm" 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  decreaseBathrooms();
+                                }}
+                              >
+                                -
+                              </button>
+                              <div className="flex-grow text-center py-1 text-sm flex items-center justify-center">
+                                <Bath className="h-3.5 w-3.5 mr-1.5" />
+                                {bathrooms}
+                              </div>
+                              <button 
+                                className="px-3 py-1 border-l text-sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  increaseBathrooms();
+                                }}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center">
+                            <Checkbox 
+                              id="pet-friendly"
+                              checked={acceptsPets}
+                              onCheckedChange={() => setAcceptsPets(!acceptsPets)}
+                              className="mr-2"
+                            />
+                            <label htmlFor="pet-friendly" className="text-sm flex items-center cursor-pointer">
+                              <PawPrint className="h-3.5 w-3.5 mr-1.5" />
+                              Pet-friendly
+                            </label>
+                          </div>
+                          
+                          <Button 
+                            className="w-full mt-2" 
+                            size="sm"
+                            onClick={() => setGuestsMenuOpen(false)}
+                          >
+                            Apply
+                          </Button>
+                        </div>
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 
                 <div className="md:col-span-4 flex justify-between">
@@ -391,85 +594,6 @@ const ServicesPage = () => {
                               <SelectItem value="airbnb">Airbnb</SelectItem>
                             </SelectContent>
                           </Select>
-                        </div>
-                        
-                        {/* Room options section */}
-                        <div>
-                          <h3 className="font-medium mb-3">Room Options</h3>
-                          
-                          <div className="space-y-4">
-                            <div>
-                              <p className="text-sm mb-2">Number of rooms</p>
-                              <div className="flex border rounded">
-                                <button 
-                                  className="px-3 py-1 border-r text-sm" 
-                                  onClick={() => setRooms(Math.max(1, rooms - 1))}
-                                >
-                                  -
-                                </button>
-                                <div className="flex-grow text-center py-1 text-sm">{rooms}</div>
-                                <button 
-                                  className="px-3 py-1 border-l text-sm"
-                                  onClick={() => setRooms(Math.min(5, rooms + 1))}
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <p className="text-sm mb-2">Beds per room</p>
-                              <div className="flex border rounded">
-                                <button 
-                                  className="px-3 py-1 border-r text-sm" 
-                                  onClick={() => setBeds(Math.max(1, beds - 1))}
-                                >
-                                  -
-                                </button>
-                                <div className="flex-grow text-center py-1 text-sm">{beds}</div>
-                                <button 
-                                  className="px-3 py-1 border-l text-sm"
-                                  onClick={() => setBeds(Math.min(4, beds + 1))}
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <p className="text-sm mb-2">Number of bathrooms</p>
-                              <div className="flex border rounded">
-                                <button 
-                                  className="px-3 py-1 border-r text-sm" 
-                                  onClick={() => setBathrooms(Math.max(1, bathrooms - 1))}
-                                >
-                                  -
-                                </button>
-                                <div className="flex-grow text-center py-1 text-sm">{bathrooms}</div>
-                                <button 
-                                  className="px-3 py-1 border-l text-sm"
-                                  onClick={() => setBathrooms(Math.min(3, bathrooms + 1))}
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <label className="flex items-center cursor-pointer">
-                                <Checkbox 
-                                  id="pets" 
-                                  checked={acceptsPets} 
-                                  onCheckedChange={() => setAcceptsPets(!acceptsPets)}
-                                  className="mr-2"
-                                />
-                                <span className="text-sm flex items-center">
-                                  <PawPrint className="h-4 w-4 mr-2" />
-                                  Pet-friendly
-                                </span>
-                              </label>
-                            </div>
-                          </div>
                         </div>
                         
                         <Accordion type="single" collapsible className="w-full">
@@ -625,10 +749,6 @@ const ServicesPage = () => {
           <TabsContent value="all" className="mt-0">
             <ServiceGrid 
               services={filteredServices} 
-              rooms={rooms}
-              beds={beds}
-              bathrooms={bathrooms}
-              acceptsPets={acceptsPets}
               isLoading={isLoading}
             />
           </TabsContent>
@@ -636,10 +756,6 @@ const ServicesPage = () => {
           <TabsContent value="hotel" className="mt-0">
             <ServiceGrid 
               services={filteredServices}
-              rooms={rooms}
-              beds={beds}
-              bathrooms={bathrooms}
-              acceptsPets={acceptsPets}
               isLoading={isLoading}
             />
           </TabsContent>
@@ -647,10 +763,6 @@ const ServicesPage = () => {
           <TabsContent value="airbnb" className="mt-0">
             <ServiceGrid 
               services={filteredServices}
-              rooms={rooms}
-              beds={beds}
-              bathrooms={bathrooms}
-              acceptsPets={acceptsPets}
               isLoading={isLoading}
             />
           </TabsContent>
@@ -664,17 +776,9 @@ const ServicesPage = () => {
 
 const ServiceGrid = ({ 
   services,
-  rooms = 1,
-  beds = 1,
-  bathrooms = 1,
-  acceptsPets = false,
   isLoading = false
 }: { 
   services: any[];
-  rooms?: number;
-  beds?: number;
-  bathrooms?: number;
-  acceptsPets?: boolean;
   isLoading?: boolean;
 }) => {
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -772,89 +876,4 @@ const ServiceGrid = ({
           <Card className="overflow-hidden hover-lift h-full">
             <div className="h-48 overflow-hidden relative">
               <img 
-                src={service.image} 
-                alt={service.title}
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-              />
-              <button 
-                onClick={(e) => toggleFavorite(service.id, e)}
-                className={`absolute top-2 right-2 p-2 rounded-full ${
-                  favorites.includes(service.id) 
-                    ? 'bg-red-100 text-red-500' 
-                    : 'bg-white/80 text-gray-600'
-                }`}
-              >
-                <Heart className={`h-5 w-5 ${favorites.includes(service.id) ? 'fill-current' : ''}`} />
-              </button>
-            </div>
-            <CardContent className="p-5">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-display font-semibold text-xl">{service.title}</h3>
-                <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full capitalize">
-                  {service.type}
-                </span>
-              </div>
-              
-              <div className="flex items-center text-gray-500 mb-2">
-                <MapPin className="h-4 w-4 mr-1" />
-                <span className="text-sm">
-                  {service.vicinity || service.location}
-                  {service.district && (
-                    <span className="font-medium ml-1">
-                      ({service.district} District)
-                    </span>
-                  )}
-                </span>
-              </div>
-              
-              <div className="flex items-center mb-3">
-                <div className="flex items-center text-yellow-500 mr-2">
-                  <Star className="h-4 w-4 fill-current" />
-                  <span className="ml-1 font-medium">{service.rating?.toFixed(1) || "N/A"}</span>
-                </div>
-                <span className="text-sm text-gray-500">
-                  ({service.reviewCount || "0"} reviews)
-                </span>
-              </div>
-              
-              <div className="flex flex-wrap gap-2 mb-3">
-                {rooms > 1 && service.rooms && service.rooms >= rooms && (
-                  <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
-                    <Bed className="h-3 w-3 mr-1" /> {service.rooms} Room{service.rooms > 1 ? 's' : ''}
-                  </span>
-                )}
-                {beds > 1 && service.beds && service.beds >= beds && (
-                  <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
-                    <Bed className="h-3 w-3 mr-1" /> {service.beds} Bed{service.beds > 1 ? 's' : ''}
-                  </span>
-                )}
-                {bathrooms > 1 && service.bathrooms && service.bathrooms >= bathrooms && (
-                  <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
-                    <Bath className="h-3 w-3 mr-1" /> {service.bathrooms} Bath{service.bathrooms > 1 ? 's' : ''}
-                  </span>
-                )}
-                {acceptsPets && service.acceptsPets && (
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full flex items-center">
-                    <PawPrint className="h-3 w-3 mr-1" /> Pet-friendly
-                  </span>
-                )}
-              </div>
-              
-              <p className="text-gray-600 mb-4 line-clamp-2">{service.description || "Beautiful accommodation in Rwanda."}</p>
-              
-              <div className="flex justify-between items-center">
-                <div className="font-bold text-blue-600">
-                  ${service.pricePerNight}
-                  <span className="text-gray-500 font-normal text-sm">/night</span>
-                </div>
-                <Button variant="outline" size="sm">View Details</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-      ))}
-    </div>
-  );
-};
-
-export default ServicesPage;
+                src={service.image}
