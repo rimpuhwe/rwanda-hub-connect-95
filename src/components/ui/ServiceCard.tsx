@@ -58,6 +58,12 @@ export const ServiceCard = ({
 }: ServiceCardProps) => {
   // Use provided image or get a random placeholder if image is missing or invalid
   const displayImage = image || getRandomPlaceholder();
+  
+  // Determine the category label
+  let categoryLabel = type === 'hotel' ? 'Hotel' : 'Airbnb';
+  if (title.toLowerCase().includes('lodge')) {
+    categoryLabel = 'Lodge';
+  }
 
   return (
     <Link
@@ -81,7 +87,7 @@ export const ServiceCard = ({
         />
         <div className="absolute top-3 left-3 z-20">
           <span className="inline-block bg-white/90 backdrop-blur-sm text-xs font-medium py-1 px-2 rounded-full">
-            {type === 'hotel' ? 'Hotel' : 'Airbnb'}
+            {categoryLabel}
           </span>
         </div>
       </div>

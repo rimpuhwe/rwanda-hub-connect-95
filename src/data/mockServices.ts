@@ -581,6 +581,20 @@ export const getServiceById = (id: string): Service | undefined => {
 
 export const getServicesByType = (type?: string): Service[] => {
   if (!type || type === 'all') return services;
+  
+  if (type === 'hotel') {
+    // Return only hotels excluding lodges
+    return services.filter(service => 
+      service.type === 'hotel' && !service.name.toLowerCase().includes('lodge')
+    );
+  } else if (type === 'airbnb') {
+    // Return airbnbs and lodges
+    return services.filter(service => 
+      service.type === 'airbnb' || 
+      (service.type === 'hotel' && service.name.toLowerCase().includes('lodge'))
+    );
+  }
+  
   return services.filter(service => service.type === type);
 };
 

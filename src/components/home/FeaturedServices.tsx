@@ -45,11 +45,12 @@ export const FeaturedServices = () => {
       // Filter by type (hotel or airbnb) and include lodges in airbnb results
       const typeFiltered = allServices.filter(service => {
         if (activeTab === 'hotels') {
-          return service.type === 'hotel';
+          // For hotels tab, only include pure hotels (excluding those with 'lodge' in name)
+          return service.type === 'hotel' && !service.name.toLowerCase().includes('lodge');
         } else {
-          // For 'airbnb' tab, include both airbnb and lodges (hotels that have 'lodge' in their name)
+          // For 'airbnb' tab, include both airbnb and hotels that have 'lodge' in their name
           return service.type === 'airbnb' || 
-                 (service.type === 'hotel' && service.name.toLowerCase().includes('lodge'));
+                (service.type === 'hotel' && service.name.toLowerCase().includes('lodge'));
         }
       });
       

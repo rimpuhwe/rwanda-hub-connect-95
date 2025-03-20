@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
@@ -100,8 +99,10 @@ const ServicesPage = () => {
         service.type === 'airbnb' || 
         (service.type === 'hotel' && service.name.toLowerCase().includes('lodge'))
       );
-    } else if (activeTab !== 'all') {
-      filtered = filtered.filter(service => service.type === activeTab);
+    } else if (activeTab === 'hotel') {
+      filtered = filtered.filter(service => 
+        service.type === 'hotel' && !service.name.toLowerCase().includes('lodge')
+      );
     }
     
     if (searchQuery) {
