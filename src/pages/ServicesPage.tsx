@@ -343,18 +343,18 @@ const ServicesPage = () => {
                 </div>
                 
                 <div>
-                  <DropdownMenu open={guestsMenuOpen} onOpenChange={setGuestsMenuOpen}>
-                    <DropdownMenuTrigger asChild>
+                  <Popover open={guestsMenuOpen} onOpenChange={setGuestsMenuOpen}>
+                    <PopoverTrigger asChild>
                       <Button variant="outline" className="w-full justify-start">
                         <Users className="mr-2 h-4 w-4" />
                         {guests} Guest{guests !== 1 ? 's' : ''} & Options
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-72 p-4 bg-white">
-                      <DropdownMenuLabel>Guests & Room Options</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuGroup>
-                        <div className="space-y-4 py-2">
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[340px] p-5" align="start">
+                      <div className="space-y-4">
+                        <h3 className="font-medium">Guests & Room Options</h3>
+                        
+                        <div className="space-y-4">
                           <div>
                             <p className="text-sm mb-2">Number of guests</p>
                             <div className="flex border rounded">
@@ -469,28 +469,35 @@ const ServicesPage = () => {
 
                           <div className="flex items-center">
                             <Checkbox 
-                              id="pet-friendly"
+                              id="pet-friendly-popup"
                               checked={acceptsPets}
                               onCheckedChange={() => setAcceptsPets(!acceptsPets)}
                               className="mr-2"
                             />
-                            <label htmlFor="pet-friendly" className="text-sm flex items-center cursor-pointer">
+                            <label htmlFor="pet-friendly-popup" className="text-sm flex items-center cursor-pointer">
                               <PawPrint className="h-3.5 w-3.5 mr-1.5" />
                               Pet-friendly
                             </label>
                           </div>
-                          
-                          <Button 
-                            className="w-full mt-2" 
-                            size="sm"
-                            onClick={() => setGuestsMenuOpen(false)}
-                          >
+                        </div>
+                        
+                        <div className="flex justify-between pt-4 border-t">
+                          <Button variant="outline" onClick={() => {
+                            setGuests(2);
+                            setRooms(1);
+                            setBeds(1);
+                            setBathrooms(1);
+                            setAcceptsPets(false);
+                          }}>
+                            Reset
+                          </Button>
+                          <Button onClick={() => setGuestsMenuOpen(false)}>
                             Apply
                           </Button>
                         </div>
-                      </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 
                 <div className="md:col-span-3 flex justify-between">

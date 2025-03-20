@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Star, MessageSquare, Users, Bed, Bath, PawPrint } from 'lucide-react';
+import { CalendarIcon, Star, MessageSquare, Users, Bed, Bath, PawPrint, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 interface BookingSidebarProps {
   service: any;
@@ -38,6 +39,7 @@ export const BookingSidebar = ({
   const [beds, setBeds] = useState(1);
   const [bathrooms, setBathrooms] = useState(1);
   const [acceptsPets, setAcceptsPets] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
 
   const calculateTotal = () => {
     if (!dateRange.to) return service.price;
@@ -155,94 +157,122 @@ export const BookingSidebar = ({
           </div>
         </div>
         
-        {/* Room options - moved outside the More Filters dropdown */}
-        <div className="mb-4 border p-3 rounded-md bg-gray-50">
-          <h4 className="font-medium mb-3 text-sm">Room Options</h4>
-          
-          <div className="space-y-3">
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-sm flex items-center">
-                  <Bed className="h-4 w-4 mr-2" /> Rooms
+        {/* Room options - Using Popover instead of static content */}
+        <div className="mb-4">
+          <Popover open={optionsOpen} onOpenChange={setOptionsOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full justify-between">
+                <span className="flex items-center">
+                  <Bed className="h-4 w-4 mr-2" /> Room Options
                 </span>
-                <div className="flex items-center space-x-2">
-                  <button 
-                    className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center" 
-                    onClick={decreaseRooms}
-                  >
-                    -
-                  </button>
-                  <span className="w-6 text-center">{rooms}</span>
-                  <button 
-                    className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center"
-                    onClick={increaseRooms}
-                  >
-                    +
-                  </button>
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-4" align="start">
+              <div className="space-y-4">
+                <h4 className="font-medium">Room Options</h4>
+                
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm flex items-center">
+                        <Bed className="h-4 w-4 mr-2" /> Rooms
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center" 
+                          onClick={decreaseRooms}
+                        >
+                          -
+                        </button>
+                        <span className="w-6 text-center">{rooms}</span>
+                        <button 
+                          className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center"
+                          onClick={increaseRooms}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm flex items-center">
+                        <Bed className="h-4 w-4 mr-2" /> Beds
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center" 
+                          onClick={decreaseBeds}
+                        >
+                          -
+                        </button>
+                        <span className="w-6 text-center">{beds}</span>
+                        <button 
+                          className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center"
+                          onClick={increaseBeds}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm flex items-center">
+                        <Bath className="h-4 w-4 mr-2" /> Bathrooms
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center" 
+                          onClick={decreaseBathrooms}
+                        >
+                          -
+                        </button>
+                        <span className="w-6 text-center">{bathrooms}</span>
+                        <button 
+                          className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center"
+                          onClick={increaseBathrooms}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex items-center">
+                      <Checkbox 
+                        id="pets-allowed" 
+                        checked={acceptsPets} 
+                        onCheckedChange={() => setAcceptsPets(!acceptsPets)}
+                        className="mr-2"
+                      />
+                      <label htmlFor="pets-allowed" className="text-sm flex items-center cursor-pointer">
+                        <PawPrint className="h-4 w-4 mr-2" /> Pet-friendly
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between pt-3 border-t mt-3">
+                  <Button variant="outline" size="sm" onClick={() => {
+                    setRooms(1);
+                    setBeds(1);
+                    setBathrooms(1);
+                    setAcceptsPets(false);
+                  }}>
+                    Reset
+                  </Button>
+                  <Button size="sm" onClick={() => setOptionsOpen(false)}>
+                    Apply
+                  </Button>
                 </div>
               </div>
-            </div>
-            
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-sm flex items-center">
-                  <Bed className="h-4 w-4 mr-2" /> Beds
-                </span>
-                <div className="flex items-center space-x-2">
-                  <button 
-                    className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center" 
-                    onClick={decreaseBeds}
-                  >
-                    -
-                  </button>
-                  <span className="w-6 text-center">{beds}</span>
-                  <button 
-                    className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center"
-                    onClick={increaseBeds}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-sm flex items-center">
-                  <Bath className="h-4 w-4 mr-2" /> Bathrooms
-                </span>
-                <div className="flex items-center space-x-2">
-                  <button 
-                    className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center" 
-                    onClick={decreaseBathrooms}
-                  >
-                    -
-                  </button>
-                  <span className="w-6 text-center">{bathrooms}</span>
-                  <button 
-                    className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center"
-                    onClick={increaseBathrooms}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <div className="flex items-center">
-                <Checkbox 
-                  id="pets-allowed" 
-                  checked={acceptsPets} 
-                  onCheckedChange={() => setAcceptsPets(!acceptsPets)}
-                  className="mr-2"
-                />
-                <label htmlFor="pets-allowed" className="text-sm flex items-center cursor-pointer">
-                  <PawPrint className="h-4 w-4 mr-2" /> Pet-friendly
-                </label>
-              </div>
-            </div>
-          </div>
+            </PopoverContent>
+          </Popover>
         </div>
         
         <div className="mb-4">
