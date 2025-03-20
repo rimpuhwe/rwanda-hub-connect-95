@@ -1,6 +1,6 @@
 
 import { Link } from 'react-router-dom';
-import { Star, MapPin, Bed, Bath, PawPrint } from 'lucide-react';
+import { Star, MapPin, PawPrint } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ServiceCardProps {
@@ -101,30 +101,10 @@ export const ServiceCard = ({
           <MapPin className="h-3.5 w-3.5 mr-1" />
           <span className="line-clamp-1">
             {vicinity || location}
-            {district && (
-              <span className="font-medium ml-1">
-                {district}
-              </span>
-            )}
           </span>
         </div>
 
         <div className="mt-2 flex flex-wrap gap-2">
-          {rooms > 0 && (
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
-              <Bed className="h-3 w-3 mr-1" /> {rooms} Room{rooms > 1 ? 's' : ''}
-            </span>
-          )}
-          {beds > 0 && (
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
-              <Bed className="h-3 w-3 mr-1" /> {beds} Bed{beds > 1 ? 's' : ''}
-            </span>
-          )}
-          {bathrooms > 0 && (
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
-              <Bath className="h-3 w-3 mr-1" /> {bathrooms} Bath{bathrooms > 1 ? 's' : ''}
-            </span>
-          )}
           {acceptsPets && (
             <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full flex items-center">
               <PawPrint className="h-3 w-3 mr-1" /> Pet-friendly

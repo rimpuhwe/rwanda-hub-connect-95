@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
@@ -24,7 +25,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   getServicesByType, 
   getProvinces, 
-  getDistrictsByProvince, 
   filterServicesByLocation, 
   Service
 } from '@/data/mockServices';
@@ -50,8 +50,6 @@ const ServicesPage = () => {
   const [guests, setGuests] = useState(2);
   const [guestsMenuOpen, setGuestsMenuOpen] = useState(false);
   const [province, setProvince] = useState<string>('all');
-  const [district, setDistrict] = useState<string>('all');
-  const [availableDistricts, setAvailableDistricts] = useState<string[]>([]);
   const [amenities, setAmenities] = useState<string[]>([]);
   const [propertyType, setPropertyType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('recommended');
@@ -69,8 +67,7 @@ const ServicesPage = () => {
       setIsLoading(true);
       try {
         const provinceName = province !== 'all' ? province : 'Rwanda';
-        const districtName = district !== 'all' ? district : undefined;
-        const results = await fetchAccommodations(provinceName, districtName);
+        const results = await fetchAccommodations(provinceName);
         
         const mappedResults = results.map(place => 
           mapPlaceToService(place, activeTab === 'hotel' ? 'hotel' : 'airbnb')
@@ -93,21 +90,7 @@ const ServicesPage = () => {
     const mockData = getServicesByType(activeTab === 'all' ? undefined : activeTab);
     setServices(mockData);
     setIsLoading(false);
-  }, [activeTab, province, district]);
-
-  useEffect(() => {
-    if (province !== 'all') {
-      const districts = getDistrictsByProvince(province);
-      setAvailableDistricts(districts);
-
-      if (district !== 'all' && !districts.includes(district)) {
-        setDistrict('all');
-      }
-    } else {
-      setAvailableDistricts([]);
-      setDistrict('all');
-    }
-  }, [province, district]);
+  }, [activeTab, province]);
 
   useEffect(() => {
     let filtered = services.length > 0 ? [...services] : [...services];
@@ -135,7 +118,7 @@ const ServicesPage = () => {
     );
     
     if (province !== 'all') {
-      filtered = filterServicesByLocation(filtered, province, district !== 'all' ? district : undefined);
+      filtered = filterServicesByLocation(filtered, province);
     }
     
     if (amenities.length > 0) {
@@ -203,7 +186,7 @@ const ServicesPage = () => {
     
     setFilteredServices(mappedServices);
   }, [
-    searchQuery, priceRange, province, district, amenities, 
+    searchQuery, priceRange, province, amenities, 
     propertyType, sortBy, services, rooms, beds, bathrooms, acceptsPets, activeTab
   ]);
 
@@ -214,7 +197,6 @@ const ServicesPage = () => {
     setDateRange(undefined);
     setGuests(2);
     setProvince('all');
-    setDistrict('all');
     setAmenities([]);
     setPropertyType('all');
     setSortBy('recommended');
@@ -237,7 +219,6 @@ const ServicesPage = () => {
     setDateRange(undefined);
     setGuests(2);
     setProvince('all');
-    setDistrict('all');
     setAmenities([]);
     setPropertyType('all');
     setSortBy('recommended');
@@ -302,8 +283,8 @@ const ServicesPage = () => {
           
           <div className="mb-8">
             <div className="bg-gray-50 rounded-lg p-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="md:col-span-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-3">
                   <div className="relative">
                     <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                     <Input
@@ -355,25 +336,6 @@ const ServicesPage = () => {
                       <SelectItem value="all">All Provinces</SelectItem>
                       {provinces.map(p => (
                         <SelectItem key={p} value={p}>{p}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Select 
-                    value={district} 
-                    onValueChange={setDistrict}
-                    disabled={province === 'all' || availableDistricts.length === 0}
-                  >
-                    <SelectTrigger>
-                      <MapPin className="mr-2 h-4 w-4" />
-                      <SelectValue placeholder="Select district" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Districts</SelectItem>
-                      {availableDistricts.map(d => (
-                        <SelectItem key={d} value={d}>{d} District</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -530,7 +492,7 @@ const ServicesPage = () => {
                   </DropdownMenu>
                 </div>
                 
-                <div className="md:col-span-4 flex justify-between">
+                <div className="md:col-span-3 flex justify-between">
                   <Popover open={filterMenuOpen} onOpenChange={setFilterMenuOpen}>
                     <PopoverTrigger asChild>
                       <Button variant="outline">
@@ -671,13 +633,6 @@ const ServicesPage = () => {
               </div>
             )}
             
-            {district !== 'all' && (
-              <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
-                <span>District: {district}</span>
-                <button className="ml-2" onClick={() => setDistrict('all')}>×</button>
-              </div>
-            )}
-            
             {rooms > 1 && (
               <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
                 <span>Rooms: {rooms}</span>
@@ -713,7 +668,7 @@ const ServicesPage = () => {
               </div>
             ))}
             
-            {(priceRange[0] > 0 || priceRange[1] < 500 || province !== 'all' || district !== 'all' || 
+            {(priceRange[0] > 0 || priceRange[1] < 500 || province !== 'all' || 
               amenities.length > 0 || propertyType !== 'all' || rooms > 1 || beds > 1 || 
               bathrooms > 1 || acceptsPets) && (
               <Button variant="outline" size="sm" onClick={resetFilters}>
@@ -817,10 +772,6 @@ const ServiceGrid = ({
                   <div className="h-6 bg-gray-300 rounded w-16"></div>
                 </div>
                 <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div className="flex gap-2">
-                  <div className="h-6 bg-gray-200 rounded w-16"></div>
-                  <div className="h-6 bg-gray-200 rounded w-16"></div>
-                </div>
                 <div className="h-20 bg-gray-200 rounded"></div>
                 <div className="flex justify-between items-center pt-2">
                   <div className="h-6 bg-gray-300 rounded w-1/4"></div>
