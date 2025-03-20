@@ -1,5 +1,5 @@
-
 import { toast } from "sonner";
+import { services, getServicesByType, filterServicesByLocation } from "@/data/mockServices";
 
 // Define the response type for Google Places API
 export interface PlaceResult {
@@ -31,9 +31,13 @@ interface PlacesResponse {
   next_page_token?: string;
 }
 
-// We need to use a proxy because client-side requests to Google Places API are not allowed due to CORS
-const API_PROXY_URL = 'https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api/place';
-const GOOGLE_API_KEY = 'YOUR_GOOGLE_API_KEY_HERE'; // Replace with your actual API key
+// Placeholder images for services without images
+const placeholderImages = [
+  "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa",
+  "https://images.unsplash.com/photo-1524230572899-a752b3835840",
+  "https://images.unsplash.com/photo-1487958449943-2429e8be8625",
+  "https://images.unsplash.com/photo-1721322800607-8c38375eef04"
+];
 
 // Fetch accommodations based on location
 export const fetchAccommodations = async (
@@ -42,29 +46,39 @@ export const fetchAccommodations = async (
   type: 'lodging' | 'restaurant' | 'establishment' = 'lodging'
 ): Promise<PlaceResult[]> => {
   try {
-    // Construct the search query based on province and district
-    const locationQuery = district 
-      ? `${district} district, ${province} province, Rwanda`
-      : `${province} province, Rwanda`;
+    // Instead of API, get data from mock services
+    let filteredServices = getServicesByType();
     
-    const params = new URLSearchParams({
-      key: GOOGLE_API_KEY,
-      location: '-1.9403,29.8739', // Default to Rwanda's coordinates
-      radius: '50000', // 50km radius
-      type,
-      keyword: locationQuery,
-    });
-    
-    const response = await fetch(`${API_PROXY_URL}/nearbysearch/json?${params}`);
-    const data: PlacesResponse = await response.json();
-    
-    if (data.status !== 'OK') {
-      console.error('Error fetching places:', data.status);
-      toast.error('Failed to fetch accommodations');
-      return [];
+    // Apply province and district filters if provided
+    if (province !== 'Rwanda') {
+      filteredServices = filterServicesByLocation(filteredServices, province, district);
     }
     
-    return data.results;
+    // Map our services to the PlaceResult format
+    const results: PlaceResult[] = filteredServices.map(service => ({
+      place_id: service.id,
+      name: service.name,
+      vicinity: `${service.location}, ${service.district} District, ${service.province}`,
+      geometry: {
+        location: {
+          lat: 0, // We don't have actual coordinates in the mock data
+          lng: 0,
+        },
+      },
+      photos: service.images.map(img => ({
+        photo_reference: img,
+        height: 400,
+        width: 600,
+        html_attributions: [],
+      })),
+      rating: service.rating,
+      user_ratings_total: service.reviewCount,
+      price_level: service.price > 200 ? 3 : service.price > 100 ? 2 : 1,
+      types: [service.type === 'hotel' ? 'lodging' : 'apartment'],
+      business_status: 'OPERATIONAL',
+    }));
+    
+    return results;
   } catch (error) {
     console.error('Error fetching places:', error);
     toast.error('Failed to fetch accommodations');
@@ -74,11 +88,13 @@ export const fetchAccommodations = async (
 
 // Get photo URL from photo reference
 export const getPhotoUrl = (photoReference: string, maxWidth = 400): string => {
-  if (!photoReference) {
-    return 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa'; // Fallback image
+  // If it's already a URL, return it
+  if (photoReference.startsWith('http')) {
+    return photoReference;
   }
   
-  return `${API_PROXY_URL}/photo?maxwidth=${maxWidth}&photoreference=${photoReference}&key=${GOOGLE_API_KEY}`;
+  // Otherwise return a random placeholder
+  return placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
 };
 
 // Convert price level to actual price (estimation)
@@ -109,11 +125,11 @@ export const mapPlaceToService = (place: PlaceResult, type: 'hotel' | 'airbnb' =
     title: place.name,
     location: place.vicinity,
     vicinity: place.vicinity,
-    province: 'Rwanda', // We'll extract this from the location if possible
-    district: place.vicinity?.split(',').pop()?.trim() || 'Unknown',
+    province: place.vicinity?.split(',').pop()?.trim() || 'Rwanda',
+    district: place.vicinity?.split(',')[1]?.trim() || 'Unknown',
     image: place.photos?.length 
       ? getPhotoUrl(place.photos[0].photo_reference)
-      : 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa',
+      : placeholderImages[Math.floor(Math.random() * placeholderImages.length)],
     rating: place.rating || 4.0,
     pricePerNight: getPriceFromLevel(place.price_level),
     rooms: Math.floor(Math.random() * 3) + 1, // Random number of rooms between 1-3

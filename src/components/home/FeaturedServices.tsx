@@ -1,87 +1,56 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, MapPin } from 'lucide-react';
 import { ServiceCard } from '../ui/ServiceCard';
-import { services } from '@/data/mockServices';
-import { fetchAccommodations, mapPlaceToService, PlaceResult } from '@/services/placesApi';
+import { services, getProvinces, filterServicesByLocation } from '@/data/mockServices';
 
 export const FeaturedServices = () => {
   const [activeTab, setActiveTab] = useState<'hotels' | 'airbnb'>('hotels');
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [googleServices, setGoogleServices] = useState<any[]>([]);
-  
-  const mappedServices = {
-    hotels: services
-      .filter(service => service.type === 'hotel')
-      .map(service => ({
-        id: service.id,
-        type: service.type,
-        title: service.name,
-        location: service.location,
-        province: service.province,
-        district: service.district,
-        image: service.images[0],
-        rating: service.rating,
-        pricePerNight: service.price,
-        rooms: service.rooms,
-        beds: service.beds,
-        bathrooms: service.bathrooms,
-        acceptsPets: service.acceptsPets,
-      })).slice(0, 3),
-    airbnb: services
-      .filter(service => service.type === 'airbnb')
-      .map(service => ({
-        id: service.id,
-        type: service.type,
-        title: service.name,
-        location: service.location,
-        province: service.province,
-        district: service.district,
-        image: service.images[0],
-        rating: service.rating,
-        pricePerNight: service.price,
-        rooms: service.rooms,
-        beds: service.beds,
-        bathrooms: service.bathrooms,
-        acceptsPets: service.acceptsPets,
-      })).slice(0, 3),
-  };
+  const [filteredServices, setFilteredServices] = useState<any[]>([]);
   
   useEffect(() => {
-    const fetchServices = async () => {
-      setIsLoading(true);
-      try {
-        const province = selectedProvince || 'Rwanda';
-        const results = await fetchAccommodations(province);
-        
-        const mappedPlaces = results.map(place => 
-          mapPlaceToService(place, activeTab === 'hotels' ? 'hotel' : 'airbnb')
-        );
-        
-        const filteredPlaces = mappedPlaces
-          .filter(place => activeTab === 'hotels' 
-            ? place.type === 'hotel' 
-            : place.type === 'airbnb')
-          .slice(0, 3);
-        
-        setGoogleServices(filteredPlaces);
-      } catch (error) {
-        console.error('Failed to fetch places:', error);
-        setGoogleServices([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    setIsLoading(true);
     
-    fetchServices();
+    // Short delay to simulate loading
+    setTimeout(() => {
+      // Get all services or filter by province if selected
+      let allServices = services;
+      
+      if (selectedProvince) {
+        allServices = filterServicesByLocation(allServices, selectedProvince);
+      }
+      
+      // Filter by type (hotel or airbnb)
+      const typeFiltered = allServices.filter(service => 
+        activeTab === 'hotels' ? service.type === 'hotel' : service.type === 'airbnb'
+      );
+      
+      // Map to the format expected by ServiceCard
+      const mappedServices = typeFiltered.map(service => ({
+        id: service.id,
+        type: service.type,
+        title: service.name,
+        location: service.location,
+        province: service.province,
+        district: service.district,
+        image: service.images.length > 0 ? service.images[0] : '',
+        rating: service.rating,
+        pricePerNight: service.price,
+        rooms: service.rooms || 1,
+        beds: service.beds || 1,
+        bathrooms: service.bathrooms || 1,
+        acceptsPets: service.acceptsPets || false,
+      })).slice(0, 3);
+      
+      setFilteredServices(mappedServices);
+      setIsLoading(false);
+    }, 500);
   }, [activeTab, selectedProvince]);
   
-  const filteredServices = googleServices.length > 0 
-    ? googleServices 
-    : mappedServices[activeTab];
-  
-  const provinces = [...new Set(services.map(service => service.province))];
+  const provinces = getProvinces();
   
   return (
     <section id="services" className="section-spacing bg-gray-50">

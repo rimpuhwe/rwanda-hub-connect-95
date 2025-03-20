@@ -1,6 +1,6 @@
 
 import { Link } from 'react-router-dom';
-import { Star, MapPin } from 'lucide-react';
+import { Star, MapPin, Bed, Bath, PawPrint } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ServiceCardProps {
@@ -24,6 +24,20 @@ interface ServiceCardProps {
   photos?: string[];
 }
 
+// Placeholder images for hotels without images
+const placeholderImages = [
+  "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa",
+  "https://images.unsplash.com/photo-1524230572899-a752b3835840",
+  "https://images.unsplash.com/photo-1487958449943-2429e8be8625",
+  "https://images.unsplash.com/photo-1721322800607-8c38375eef04"
+];
+
+// Get a random placeholder image
+const getRandomPlaceholder = () => {
+  const randomIndex = Math.floor(Math.random() * placeholderImages.length);
+  return placeholderImages[randomIndex];
+};
+
 export const ServiceCard = ({
   id,
   type,
@@ -42,6 +56,9 @@ export const ServiceCard = ({
   placeId,
   vicinity,
 }: ServiceCardProps) => {
+  // Use provided image or get a random placeholder if image is missing or invalid
+  const displayImage = image || getRandomPlaceholder();
+
   return (
     <Link
       to={`/services/${type}/${id}`}
@@ -53,9 +70,14 @@ export const ServiceCard = ({
       <div className="relative aspect-[4/3] overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10" />
         <img
-          src={image}
+          src={displayImage}
           alt={title}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          onError={(e) => {
+            // Fallback if the image fails to load
+            const target = e.target as HTMLImageElement;
+            target.src = getRandomPlaceholder();
+          }}
         />
         <div className="absolute top-3 left-3 z-20">
           <span className="inline-block bg-white/90 backdrop-blur-sm text-xs font-medium py-1 px-2 rounded-full">
@@ -89,23 +111,23 @@ export const ServiceCard = ({
 
         <div className="mt-2 flex flex-wrap gap-2">
           {rooms > 0 && (
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
-              {rooms} Room{rooms > 1 ? 's' : ''}
+            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
+              <Bed className="h-3 w-3 mr-1" /> {rooms} Room{rooms > 1 ? 's' : ''}
             </span>
           )}
           {beds > 0 && (
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
-              {beds} Bed{beds > 1 ? 's' : ''}
+            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
+              <Bed className="h-3 w-3 mr-1" /> {beds} Bed{beds > 1 ? 's' : ''}
             </span>
           )}
           {bathrooms > 0 && (
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
-              {bathrooms} Bath{bathrooms > 1 ? 's' : ''}
+            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center">
+              <Bath className="h-3 w-3 mr-1" /> {bathrooms} Bath{bathrooms > 1 ? 's' : ''}
             </span>
           )}
           {acceptsPets && (
-            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-              Pet-friendly
+            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full flex items-center">
+              <PawPrint className="h-3 w-3 mr-1" /> Pet-friendly
             </span>
           )}
         </div>

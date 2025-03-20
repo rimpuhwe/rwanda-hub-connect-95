@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Star, MessageSquare, Users, Bed, Bath, PawPrint } from 'lucide-react';
 import { format } from 'date-fns';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface BookingSidebarProps {
   service: any;
@@ -38,7 +38,6 @@ export const BookingSidebar = ({
   const [beds, setBeds] = useState(1);
   const [bathrooms, setBathrooms] = useState(1);
   const [acceptsPets, setAcceptsPets] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('guests');
 
   const calculateTotal = () => {
     if (!dateRange.to) return service.price;
@@ -133,120 +132,124 @@ export const BookingSidebar = ({
           </Popover>
         </div>
         
-        <div className="mb-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-2 mb-4">
-              <TabsTrigger value="guests">
-                <Users className="h-4 w-4 mr-2" />
-                Guests
-              </TabsTrigger>
-              <TabsTrigger value="rooms">
-                <Bed className="h-4 w-4 mr-2" />
-                Room Options
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="guests" className="mt-0">
-              <div className="space-y-4">
-                <p className="font-medium mb-2">Number of guests</p>
-                <div className="flex border rounded">
+        {/* Guest selection */}
+        <div className="mb-4">
+          <p className="font-medium mb-2">Number of guests</p>
+          <div className="flex border rounded">
+            <button 
+              className="px-4 py-2 border-r" 
+              onClick={decreaseGuests}
+            >
+              -
+            </button>
+            <div className="flex-grow text-center py-2 flex items-center justify-center">
+              <Users className="h-4 w-4 mr-2" />
+              {guests}
+            </div>
+            <button 
+              className="px-4 py-2 border-l"
+              onClick={increaseGuests}
+            >
+              +
+            </button>
+          </div>
+        </div>
+        
+        {/* Room options - moved outside the More Filters dropdown */}
+        <div className="mb-4 border p-3 rounded-md bg-gray-50">
+          <h4 className="font-medium mb-3 text-sm">Room Options</h4>
+          
+          <div className="space-y-3">
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm flex items-center">
+                  <Bed className="h-4 w-4 mr-2" /> Rooms
+                </span>
+                <div className="flex items-center space-x-2">
                   <button 
-                    className="px-4 py-2 border-r" 
-                    onClick={decreaseGuests}
-                  >
-                    -
-                  </button>
-                  <div className="flex-grow text-center py-2">{guests}</div>
-                  <button 
-                    className="px-4 py-2 border-l"
-                    onClick={increaseGuests}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="rooms" className="mt-0 space-y-4">
-              <div>
-                <p className="font-medium mb-2">Number of rooms</p>
-                <div className="flex border rounded">
-                  <button 
-                    className="px-4 py-2 border-r" 
+                    className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center" 
                     onClick={decreaseRooms}
                   >
                     -
                   </button>
-                  <div className="flex-grow text-center py-2">{rooms}</div>
+                  <span className="w-6 text-center">{rooms}</span>
                   <button 
-                    className="px-4 py-2 border-l"
+                    className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center"
                     onClick={increaseRooms}
                   >
                     +
                   </button>
                 </div>
               </div>
-              
-              <div>
-                <p className="font-medium mb-2">Beds per room</p>
-                <div className="flex border rounded">
+            </div>
+            
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm flex items-center">
+                  <Bed className="h-4 w-4 mr-2" /> Beds
+                </span>
+                <div className="flex items-center space-x-2">
                   <button 
-                    className="px-4 py-2 border-r" 
+                    className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center" 
                     onClick={decreaseBeds}
                   >
                     -
                   </button>
-                  <div className="flex-grow text-center py-2">{beds}</div>
+                  <span className="w-6 text-center">{beds}</span>
                   <button 
-                    className="px-4 py-2 border-l"
+                    className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center"
                     onClick={increaseBeds}
                   >
                     +
                   </button>
                 </div>
               </div>
-              
-              <div>
-                <p className="font-medium mb-2">Number of bathrooms</p>
-                <div className="flex border rounded">
+            </div>
+            
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm flex items-center">
+                  <Bath className="h-4 w-4 mr-2" /> Bathrooms
+                </span>
+                <div className="flex items-center space-x-2">
                   <button 
-                    className="px-4 py-2 border-r" 
+                    className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center" 
                     onClick={decreaseBathrooms}
                   >
                     -
                   </button>
-                  <div className="flex-grow text-center py-2">{bathrooms}</div>
+                  <span className="w-6 text-center">{bathrooms}</span>
                   <button 
-                    className="px-4 py-2 border-l"
+                    className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center"
                     onClick={increaseBathrooms}
                   >
                     +
                   </button>
                 </div>
               </div>
-              
-              <div>
-                <label className="flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={acceptsPets}
-                    onChange={() => setAcceptsPets(!acceptsPets)}
-                    className="mr-2"
-                  />
-                  <PawPrint className="h-4 w-4 mr-2" />
-                  <span className="text-sm">Pet-friendly</span>
+            </div>
+            
+            <div>
+              <div className="flex items-center">
+                <Checkbox 
+                  id="pets-allowed" 
+                  checked={acceptsPets} 
+                  onCheckedChange={() => setAcceptsPets(!acceptsPets)}
+                  className="mr-2"
+                />
+                <label htmlFor="pets-allowed" className="text-sm flex items-center cursor-pointer">
+                  <PawPrint className="h-4 w-4 mr-2" /> Pet-friendly
                 </label>
               </div>
-            </TabsContent>
-          </Tabs>
+            </div>
+          </div>
         </div>
         
         <div className="mb-4">
           <label className="flex items-center">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={isInstantBook}
-              onChange={() => setIsInstantBook(!isInstantBook)}
+              onCheckedChange={() => setIsInstantBook(!isInstantBook)}
               className="mr-2"
             />
             <span className="text-sm">Instant Book (no approval needed)</span>
