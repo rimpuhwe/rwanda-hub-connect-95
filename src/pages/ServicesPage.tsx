@@ -32,6 +32,7 @@ import { fetchAccommodations, mapPlaceToService } from '@/services/placesApi';
 import { format } from 'date-fns';
 import { MapPin, Star, Search, Filter, Calendar as CalendarIcon, Wifi, Utensils, Tv, Car, Heart, Users, Bed, Bath, PawPrint } from 'lucide-react';
 import { toast } from "sonner";
+import { ServiceCard } from '@/components/ui/ServiceCard';
 
 const ServicesPage = () => {
   const { type } = useParams();
@@ -56,31 +57,25 @@ const ServicesPage = () => {
   const [sortBy, setSortBy] = useState<string>('recommended');
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   
-  // Room options state
   const [rooms, setRooms] = useState(1);
   const [beds, setBeds] = useState(1);
   const [bathrooms, setBathrooms] = useState(1);
   const [acceptsPets, setAcceptsPets] = useState(false);
 
-  // Get provinces for filter
   const provinces = getProvinces();
 
-  // Fetch data from Google Places API
   useEffect(() => {
     const fetchGooglePlaces = async () => {
       setIsLoading(true);
       try {
-        // Get places from Google Places API
         const provinceName = province !== 'all' ? province : 'Rwanda';
         const districtName = district !== 'all' ? district : undefined;
         const results = await fetchAccommodations(provinceName, districtName);
         
-        // Map Google Places results to our format
         const mappedResults = results.map(place => 
           mapPlaceToService(place, activeTab === 'hotel' ? 'hotel' : 'airbnb')
         );
         
-        // Filter by type if specified
         const filteredResults = activeTab === 'all' 
           ? mappedResults 
           : mappedResults.filter(service => service.type === activeTab);
@@ -88,7 +83,6 @@ const ServicesPage = () => {
         setGoogleServices(filteredResults);
       } catch (error) {
         console.error('Failed to fetch from Google Places API:', error);
-        // Fallback to mock data
         const mockData = getServicesByType(activeTab === 'all' ? undefined : activeTab);
         setServices(mockData);
       } finally {
@@ -96,19 +90,16 @@ const ServicesPage = () => {
       }
     };
     
-    // Just use mock data directly instead of trying to fetch from Google Places
     const mockData = getServicesByType(activeTab === 'all' ? undefined : activeTab);
     setServices(mockData);
     setIsLoading(false);
   }, [activeTab, province, district]);
 
-  // Update available districts when province changes
   useEffect(() => {
     if (province !== 'all') {
       const districts = getDistrictsByProvince(province);
       setAvailableDistricts(districts);
 
-      // Reset district if the current one is not in the new province
       if (district !== 'all' && !districts.includes(district)) {
         setDistrict('all');
       }
@@ -118,12 +109,9 @@ const ServicesPage = () => {
     }
   }, [province, district]);
 
-  // Apply filters to the services
   useEffect(() => {
-    // Use Google services if available, otherwise fall back to mock data
     let filtered = services.length > 0 ? [...services] : [...services];
     
-    // If airbnb is selected, include lodges
     if (activeTab === 'airbnb') {
       filtered = filtered.filter(service => 
         service.type === 'airbnb' || 
@@ -133,7 +121,6 @@ const ServicesPage = () => {
       filtered = filtered.filter(service => service.type === activeTab);
     }
     
-    // Filter by search query
     if (searchQuery) {
       filtered = filtered.filter(
         service => 
@@ -143,17 +130,14 @@ const ServicesPage = () => {
       );
     }
     
-    // Filter by price range
     filtered = filtered.filter(
       service => service.price >= priceRange[0] && service.price <= priceRange[1]
     );
     
-    // Filter by province and district
     if (province !== 'all') {
       filtered = filterServicesByLocation(filtered, province, district !== 'all' ? district : undefined);
     }
     
-    // Filter by amenities
     if (amenities.length > 0) {
       filtered = filtered.filter(service => 
         service.amenities ? amenities.every(amenity => 
@@ -162,12 +146,10 @@ const ServicesPage = () => {
       );
     }
     
-    // Filter by property type
     if (propertyType !== 'all') {
       filtered = filtered.filter(service => service.type === propertyType);
     }
     
-    // Filter by room options
     if (rooms > 1) {
       filtered = filtered.filter(
         service => service.rooms !== undefined && service.rooms >= rooms
@@ -192,16 +174,17 @@ const ServicesPage = () => {
       );
     }
     
-    // Sort results
-    if (sortBy === 'price-low') {
-      filtered.sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'price-high') {
-      filtered.sort((a, b) => b.price - a.price);
-    } else if (sortBy === 'rating') {
-      filtered.sort((a, b) => b.rating - a.rating);
-    }
+    filtered.sort((a, b) => {
+      if (sortBy === 'price-low') {
+        return a.price - b.price;
+      } else if (sortBy === 'price-high') {
+        return b.price - a.price;
+      } else if (sortBy === 'rating') {
+        return b.rating - a.rating;
+      }
+      return 0;
+    });
     
-    // Format for service cards
     const mappedServices = filtered.map(service => ({
       id: service.id,
       type: service.type,
@@ -235,7 +218,6 @@ const ServicesPage = () => {
     setAmenities([]);
     setPropertyType('all');
     setSortBy('recommended');
-    // Reset the room options
     setRooms(1);
     setBeds(1);
     setBathrooms(1);
@@ -259,14 +241,12 @@ const ServicesPage = () => {
     setAmenities([]);
     setPropertyType('all');
     setSortBy('recommended');
-    // Reset the room options
     setRooms(1);
     setBeds(1);
     setBathrooms(1);
     setAcceptsPets(false);
   };
 
-  // Helper functions for guest count changes
   const decreaseGuests = () => {
     setGuests(Math.max(1, guests - 1));
   };
@@ -275,7 +255,6 @@ const ServicesPage = () => {
     setGuests(Math.min(10, guests + 1));
   };
 
-  // Helper functions for room options
   const decreaseRooms = () => {
     setRooms(Math.max(1, rooms - 1));
   };
@@ -284,7 +263,6 @@ const ServicesPage = () => {
     setRooms(Math.min(5, rooms + 1));
   };
 
-  // Helper functions for bed options
   const decreaseBeds = () => {
     setBeds(Math.max(1, beds - 1));
   };
@@ -293,7 +271,6 @@ const ServicesPage = () => {
     setBeds(Math.min(4, beds + 1));
   };
 
-  // Helper functions for bathroom options
   const decreaseBathrooms = () => {
     setBathrooms(Math.max(1, bathrooms - 1));
   };
@@ -402,7 +379,6 @@ const ServicesPage = () => {
                   </Select>
                 </div>
                 
-                {/* Enhanced Guests Dropdown with Room Options */}
                 <div>
                   <DropdownMenu open={guestsMenuOpen} onOpenChange={setGuestsMenuOpen}>
                     <DropdownMenuTrigger asChild>
@@ -812,14 +788,12 @@ const ServiceGrid = ({
     }
     
     if (favorites.includes(serviceId)) {
-      // Remove from favorites
       userData.savedListings = userData.savedListings.filter((id: string) => id !== serviceId);
       setFavorites(prev => prev.filter(id => id !== serviceId));
       toast("Removed from favorites", {
         description: "The listing has been removed from your saved properties",
       });
     } else {
-      // Add to favorites
       userData.savedListings.push(serviceId);
       setFavorites(prev => [...prev, serviceId]);
       toast("Added to favorites", {
@@ -872,8 +846,25 @@ const ServiceGrid = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {services.map((service) => (
-        <Link to={`/services/${service.type}/${service.id}`} key={service.id}>
-          <Card className="overflow-hidden hover-lift h-full">
-            <div className="h-48 overflow-hidden relative">
-              <img 
-                src={service.image}
+        <ServiceCard
+          key={service.id}
+          id={service.id}
+          type={service.type}
+          title={service.title}
+          location={service.location}
+          province={service.province}
+          district={service.district}
+          image={service.image}
+          rating={service.rating}
+          pricePerNight={service.pricePerNight}
+          rooms={service.rooms}
+          beds={service.beds}
+          bathrooms={service.bathrooms}
+          acceptsPets={service.acceptsPets}
+        />
+      ))}
+    </div>
+  );
+};
+
+export default ServicesPage;
