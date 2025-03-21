@@ -1,7 +1,10 @@
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { services } from '@/data/mockServices';
+import { toast } from 'sonner';
 
 // Placeholder hero backgrounds
 const heroBackgrounds = [
@@ -12,6 +15,8 @@ const heroBackgrounds = [
 
 export const Hero = () => {
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
   
   useEffect(() => {
     const interval = setInterval(() => {
@@ -20,6 +25,46 @@ export const Hero = () => {
     
     return () => clearInterval(interval);
   }, []);
+  
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!searchQuery.trim()) {
+      toast.info("Please enter a search term");
+      return;
+    }
+    
+    // Check if query exactly matches a service name (case insensitive)
+    const exactMatch = services.find(
+      service => service.name.toLowerCase() === searchQuery.toLowerCase()
+    );
+    
+    if (exactMatch) {
+      // Navigate directly to the specific service
+      navigate(`/services/${exactMatch.type}/${exactMatch.id}`);
+      return;
+    }
+    
+    // Check for location search: "hotels in [location]" or "airbnb in [location]"
+    const hotelLocationMatch = searchQuery.toLowerCase().match(/hotels?\s+in\s+(.+)/i);
+    const airbnbLocationMatch = searchQuery.toLowerCase().match(/airbnbs?\s+in\s+(.+)/i);
+    const lodgeLocationMatch = searchQuery.toLowerCase().match(/lodges?\s+in\s+(.+)/i);
+    
+    if (hotelLocationMatch) {
+      const location = hotelLocationMatch[1].trim();
+      navigate(`/services/hotel?location=${encodeURIComponent(location)}`);
+      return;
+    }
+    
+    if (airbnbLocationMatch || lodgeLocationMatch) {
+      const location = (airbnbLocationMatch ? airbnbLocationMatch[1] : lodgeLocationMatch![1]).trim();
+      navigate(`/services/airbnb?location=${encodeURIComponent(location)}`);
+      return;
+    }
+    
+    // General search - navigate to services page with search query
+    navigate(`/services?search=${encodeURIComponent(searchQuery)}`);
+  };
   
   return (
     <div className="relative min-h-screen flex items-center justify-center pt-16">
@@ -55,20 +100,25 @@ export const Hero = () => {
           </p>
 
           {/* Search bar */}
-          <div className="animate-fade-up max-w-2xl mx-auto mb-10">
+          <form onSubmit={handleSearch} className="animate-fade-up max-w-2xl mx-auto mb-10">
             <div className="relative flex items-center glass p-2 rounded-full">
               <div className="w-full">
                 <input
                   type="text"
                   placeholder="Search for hotels, Airbnbs, or experiences..."
                   className="w-full bg-transparent border-none outline-none py-3 px-6 text-white placeholder-white/70"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <button className="absolute right-2 rounded-full bg-rwandan-blue text-white p-3 hover:bg-rwandan-blue/90 transition-colors">
+              <button 
+                type="submit"
+                className="absolute right-2 rounded-full bg-rwandan-blue text-white p-3 hover:bg-rwandan-blue/90 transition-colors"
+              >
                 <Search className="h-5 w-5" />
               </button>
             </div>
-          </div>
+          </form>
 
           {/* CTA buttons */}
           <div className="animate-fade-up flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4">
