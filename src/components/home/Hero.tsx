@@ -5,6 +5,15 @@ import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { services } from '@/data/mockServices';
 import { toast } from 'sonner';
+import {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 // Placeholder hero backgrounds
 const heroBackgrounds = [
@@ -16,6 +25,7 @@ const heroBackgrounds = [
 export const Hero = () => {
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -29,6 +39,51 @@ export const Hero = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!searchQuery.trim()) {
+      toast.info("Please enter a search term");
+      return;
+    }
+    
+    // Open the search dialog instead of direct navigation
+    setIsSearchOpen(true);
+  };
+
+  const handleSearchSelect = (value: string) => {
+    setIsSearchOpen(false);
+    
+    // Navigate based on the search result category
+    if (value.startsWith('hotel:') || value.startsWith('airbnb:')) {
+      const [type, id] = value.split(':');
+      navigate(`/services/${type}/${id}`);
+    } else if (value.startsWith('blog:')) {
+      const id = value.replace('blog:', '');
+      navigate(`/blog/${id}`);
+    } else if (value.startsWith('job:')) {
+      const id = value.replace('job:', '');
+      navigate(`/jobs/${id}`);
+    } else {
+      // Default search results page
+      navigate(`/search?q=${encodeURIComponent(value)}`);
+    }
+  };
+
+  // Filter services based on search query for the CommandDialog
+  const filteredHotels = services
+    .filter(service => 
+      service.type === 'hotel' && 
+      service.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .slice(0, 5);
+
+  const filteredAirbnbs = services
+    .filter(service => 
+      service.type === 'airbnb' && 
+      service.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .slice(0, 5);
+
+  // Traditional search handling (for form submission)
+  const handleTraditionalSearch = () => {
     if (!searchQuery.trim()) {
       toast.info("Please enter a search term");
       return;
@@ -109,10 +164,12 @@ export const Hero = () => {
                   className="w-full bg-transparent border-none outline-none py-3 px-6 text-white placeholder-white/70"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onClick={() => setIsSearchOpen(true)}
                 />
               </div>
               <button 
-                type="submit"
+                type="button"
+                onClick={handleTraditionalSearch}
                 className="absolute right-2 rounded-full bg-rwandan-blue text-white p-3 hover:bg-rwandan-blue/90 transition-colors"
               >
                 <Search className="h-5 w-5" />
@@ -144,6 +201,82 @@ export const Hero = () => {
           <div className="w-1.5 h-3 bg-white/80 rounded-full animate-[fade-in_1.5s_infinite_alternate]"></div>
         </div>
       </div>
+
+      {/* Search Dialog */}
+      <CommandDialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+        <CommandInput 
+          placeholder="Search for accommodations, blogs, jobs..." 
+          value={searchQuery}
+          onValueChange={setSearchQuery}
+        />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          
+          {filteredHotels.length > 0 && (
+            <CommandGroup heading="Hotels">
+              {filteredHotels.map(hotel => (
+                <CommandItem 
+                  key={hotel.id}
+                  onSelect={() => handleSearchSelect(`hotel:${hotel.id}`)}
+                >
+                  <div className="flex flex-col">
+                    <span>{hotel.name}</span>
+                    <span className="text-xs text-gray-500">{hotel.location}, {hotel.province}</span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+          
+          {filteredAirbnbs.length > 0 && (
+            <CommandGroup heading="Airbnbs">
+              {filteredAirbnbs.map(airbnb => (
+                <CommandItem 
+                  key={airbnb.id}
+                  onSelect={() => handleSearchSelect(`airbnb:${airbnb.id}`)}
+                >
+                  <div className="flex flex-col">
+                    <span>{airbnb.name}</span>
+                    <span className="text-xs text-gray-500">{airbnb.location}, {airbnb.province}</span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+          
+          <CommandGroup heading="Search by type">
+            <CommandItem onSelect={() => handleSearchSelect(`search:Hotels in Rwanda`)}>
+              <div className="flex flex-col">
+                <span>All Hotels in Rwanda</span>
+                <span className="text-xs text-gray-500">Browse all accommodations</span>
+              </div>
+            </CommandItem>
+            <CommandItem onSelect={() => handleSearchSelect(`search:Airbnbs in Rwanda`)}>
+              <div className="flex flex-col">
+                <span>All Airbnbs in Rwanda</span>
+                <span className="text-xs text-gray-500">Browse all private stays</span>
+              </div>
+            </CommandItem>
+          </CommandGroup>
+          
+          {searchQuery.toLowerCase().includes('kigali') && (
+            <CommandGroup heading="Location search">
+              <CommandItem onSelect={() => navigate(`/services/hotel?location=Kigali`)}>
+                <div className="flex flex-col">
+                  <span>Hotels in Kigali</span>
+                  <span className="text-xs text-gray-500">View all Kigali hotels</span>
+                </div>
+              </CommandItem>
+              <CommandItem onSelect={() => navigate(`/services/airbnb?location=Kigali`)}>
+                <div className="flex flex-col">
+                  <span>Airbnbs in Kigali</span>
+                  <span className="text-xs text-gray-500">View all Kigali private stays</span>
+                </div>
+              </CommandItem>
+            </CommandGroup>
+          )}
+        </CommandList>
+      </CommandDialog>
     </div>
   );
 };
