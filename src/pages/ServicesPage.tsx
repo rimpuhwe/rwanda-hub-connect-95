@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,7 +25,8 @@ import {
   getServicesByType, 
   getProvinces, 
   filterServicesByLocation, 
-  Service
+  Service,
+  getServiceById
 } from '@/data/mockServices';
 import { fetchAccommodations, mapPlaceToService } from '@/services/placesApi';
 import { format } from 'date-fns';
@@ -35,20 +36,24 @@ import { ServiceCard } from '@/components/ui/ServiceCard';
 
 const ServicesPage = () => {
   const { type } = useParams();
+  const [searchParams] = useSearchParams();
+  const searchTerm = searchParams.get('search');
+  const locationParam = searchParams.get('location');
+  
   const [activeTab, setActiveTab] = useState<string>(type || 'all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchTerm || '');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
   const [services, setServices] = useState<Service[]>([]);
   const [googleServices, setGoogleServices] = useState<any[]>([]);
   const [filteredServices, setFilteredServices] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState<{
     from: Date;
     to?: Date;
   } | undefined>(undefined);
   const [guests, setGuests] = useState(2);
   const [guestsMenuOpen, setGuestsMenuOpen] = useState(false);
-  const [province, setProvince] = useState<string>('all');
+  const [province, setProvince] = useState<string>(locationParam ? 'all' : 'all');
   const [amenities, setAmenities] = useState<string[]>([]);
   const [propertyType, setPropertyType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('recommended');
@@ -60,6 +65,26 @@ const ServicesPage = () => {
   const [acceptsPets, setAcceptsPets] = useState(false);
 
   const provinces = getProvinces();
+
+  useEffect(() => {
+    if (type) {
+      setActiveTab(type);
+    }
+    
+    if (searchTerm) {
+      setSearchQuery(searchTerm);
+    }
+    
+    if (locationParam) {
+      const matchingProvince = provinces.find(
+        p => p.toLowerCase().includes(locationParam.toLowerCase())
+      );
+      
+      if (matchingProvince) {
+        setProvince(matchingProvince);
+      }
+    }
+  }, [type, searchTerm, locationParam, provinces]);
 
   useEffect(() => {
     const fetchGooglePlaces = async () => {
@@ -120,6 +145,14 @@ const ServicesPage = () => {
     
     if (province !== 'all') {
       filtered = filterServicesByLocation(filtered, province);
+    }
+    
+    if (locationParam && province === 'all') {
+      filtered = filtered.filter(service => 
+        service.location.toLowerCase().includes(locationParam.toLowerCase()) ||
+        service.province.toLowerCase().includes(locationParam.toLowerCase()) ||
+        service.district.toLowerCase().includes(locationParam.toLowerCase())
+      );
     }
     
     if (amenities.length > 0) {
@@ -188,7 +221,8 @@ const ServicesPage = () => {
     setFilteredServices(mappedServices);
   }, [
     searchQuery, priceRange, province, amenities, 
-    propertyType, sortBy, services, rooms, beds, bathrooms, acceptsPets, activeTab
+    propertyType, sortBy, services, rooms, beds, bathrooms, 
+    acceptsPets, activeTab, locationParam
   ]);
 
   const handleTabChange = (value: string) => {
