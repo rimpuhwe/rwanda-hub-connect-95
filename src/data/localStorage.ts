@@ -85,6 +85,12 @@ export const getBookings = (): Booking[] => {
   return bookings ? JSON.parse(bookings) : [];
 };
 
+// Add the missing function that's being imported in bookingSlice.ts
+export const getBookingsByUserId = (userId: string): Booking[] => {
+  const bookings = getBookings();
+  return bookings.filter(booking => booking.userId === userId);
+};
+
 export const saveBooking = (booking: Booking): void => {
   const bookings = getBookings();
   const existingBookingIndex = bookings.findIndex(b => b.id === booking.id);
