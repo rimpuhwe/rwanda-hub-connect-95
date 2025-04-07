@@ -14,6 +14,7 @@ import { saveBooking, Booking } from '@/data/localStorage';
 import { createBooking } from '@/store/slices/bookingSlice';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { DateRange } from 'react-day-picker';
 
 // Booking form validation schema
 const bookingSchema = z.object({
@@ -38,11 +39,8 @@ interface BookingDialogProps {
   onPaymentClick: () => void;
   service: any;
   currentUser: any;
-  dateRange: {
-    from: Date;
-    to?: Date;
-  };
-  setDateRange: (range: { from: Date; to?: Date }) => void;
+  dateRange: DateRange;
+  setDateRange: (range: DateRange) => void;
   isInstantBook: boolean;
 }
 
@@ -65,7 +63,7 @@ export const BookingDialog = ({
     defaultValues: {
       guests: 2,
       dateRange: {
-        from: dateRange.from,
+        from: dateRange.from || new Date(),
         to: dateRange.to,
       },
     },
@@ -86,7 +84,7 @@ export const BookingDialog = ({
     }
     
     // Update the date range in parent component
-    setDateRange(values.dateRange);
+    setDateRange(values.dateRange as DateRange);
     
     if (isInstantBook) {
       // Move to payment directly
@@ -135,7 +133,7 @@ export const BookingDialog = ({
                         onSelect={(range) => field.onChange(range || { from: new Date() })}
                         numberOfMonths={1}
                         disabled={(date) => date < new Date()}
-                        className="rounded border"
+                        className="rounded border pointer-events-auto"
                       />
                     </div>
                   </FormControl>
